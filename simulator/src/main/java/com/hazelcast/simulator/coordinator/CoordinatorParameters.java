@@ -51,9 +51,9 @@ public class CoordinatorParameters {
     public CoordinatorParameters setSessionId(String sessionId) {
         checkNotNull(sessionId, "sessionId can't be null");
 
-        File file = new File(sessionId);
+        File file = new File( sessionId);
         if (!file.isAbsolute()) {
-            file = new File(getUserDir(), sessionId);
+            file = new File(new File(getUserDir(),"results"), sessionId);
         }
 
         File parentDir = file.getParentFile();
