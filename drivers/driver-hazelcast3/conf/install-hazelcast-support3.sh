@@ -12,7 +12,7 @@ set -e
 #set -x
 
 local_upload_dir=upload
-user=${SIMULATOR_USER}
+user=${SSH_USER}
 
 # we limit the number of concurrent uploads
 max_current_uploads=2
@@ -192,7 +192,7 @@ upload_to_single_agent() {
     echo "[INFO]    Upload to $public_ip completed"
 }
 
-# uploads the installation files to all agents
+# uploads the installation files to all hidden
 upload() {
     # if there are no provided public ips, then it is a local install
     if [ -z "$public_ips" ] ; then
@@ -206,7 +206,7 @@ upload() {
         return
     fi
 
-    # it is a remote install; so upload to each of the public ips
+    # it is a remote install.py; so upload to each of the public ips
     # the public_ips is a comma separated list
     # we execute the uploading in parallel
     for public_ip in ${public_ips//,/ } ; do

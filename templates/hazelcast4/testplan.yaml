@@ -1,0 +1,38 @@
+loadgenerator: simulator
+
+tests:
+- name: read_only
+  repetitions: 1
+  duration_seconds: 30
+  clients: 1
+  members: 1
+  driver: hazelcast5
+  version: maven=5.0
+  client_args:
+  member_args:
+  performance_monitor_interval_seconds: 1
+  verify_enabled: True
+  test:
+      class: com.hazelcast.simulator.tests.map.IntByteMapTest
+      threadCount: 40
+      getProb: 1
+      putProb: 0
+      keyCount: 1_000_000
+
+- name: write_only
+  duration_seconds: 30
+  repetitions: 0
+  clients: 1
+  members: 1
+  driver: hazelcast5
+  version: maven=5.0
+  client_args:
+  member_args:
+  verify_enabled: False
+  performance_monitor_interval_seconds: 1
+  test:
+      class: com.hazelcast.simulator.tests.map.IntByteMapTest
+      threadCount: 10
+      getProb: 0
+      putProb: 1
+      keyCount: 1_000_000

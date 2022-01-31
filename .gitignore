@@ -1,5 +1,4 @@
 target/
-vtune/
 *.iml
 .idea/
 .settings/
@@ -11,3 +10,8 @@ vtune/
 simulator-git.properties
 logs/
 .attach_pid*
+drivers/
+venv/
+lib/
+simulator/__pycache__/
+m2/

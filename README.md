@@ -124,20 +124,7 @@ Also contains pointers where to go next.
     cd hazelcast-simulator-<version>
     ```
    
-3. Put Simulator on the `PATH` using `simulator-wizard` command
-
-    ```
-    ./bin/simulator-wizard --install
-    ```
-
-4. Verify installation
-
-    ```
-    simulator-wizard --help
-    INFO  17:00:28 Hazelcast ..., Commit: ...
-    ```
-
-5. Congratulations! You've successfully installed Hazelcast Simulator on the Coordinator machine.
+3. Congratulations! You've successfully installed Hazelcast Simulator on the Coordinator machine.
 
 ## Run first test locally
 
@@ -179,10 +166,10 @@ in the newly created directory named with a timestamp like `2021-05-21__22_59_24
 
 It's time to generate performance charts out of the raw data.
 
-1. Generate report with `benchmark-report` command.
+1. Generate report with `benchmark_report` command.
 
    ```
-   benchmark-report 2021-05-21__22_59_24
+   benchmark_report 2021-05-21__22_59_24
    ```
    
 2. The report is generated in the newly created `report` directory
@@ -931,7 +918,7 @@ This is just necessary if the JAR files have been changed. Configuration changes
 
 # Report generation
 
-Once a benchmark has been executed, an HTML report can be generated using the `benchmark-report` tool. This tool requires
+Once a benchmark has been executed, an HTML report can be generated using the `benchmark_report` tool. This tool requires
 Gnuplot 4+ and Python 3.x to be installed for generating the diagrams.
 
 ## Basics
@@ -940,7 +927,7 @@ Assume that a benchmark has been executed and the directory `2021-05-31__23_19_1
 benchmark, you can use the following command:
 
 ```
-benchmark-report -o my-benchmark-report 2021-05-31__23_19_13
+benchmark_report -o my-benchmark-report 2021-05-31__23_19_13
 ```
 
 The name `my-benchmark-report` is output directory's name. The generated report contains detailed throughput and latency information. 
@@ -948,14 +935,14 @@ If `dstats` information is available, it shows detailed information about resour
 
 ## Generate comparison reports
 
-The `benchmark-report` tool is also able to make comparisons between two or more benchmarks. 
+The `benchmark_report` tool is also able to make comparisons between two or more benchmarks. 
 Suppose that you executed a test with some configuration, the resulting directory is `2021-05-31__23_19_13`. Then you changed
 the configuration, e.g. changed the Hazelcast version and executed again with resulting directory `2021-05-31__23_35_40`.  
 
 You can create a single report plotting those two benchmarks in the same chart allowing easy comparison with:
 
 ```
-benchmark-report -o my-comparison-report 2021-05-31__23_19_13 2021-05-31__23_35_40
+benchmark_report -o my-comparison-report 2021-05-31__23_19_13 2021-05-31__23_35_40
 ```
 
 ## Extensive reports
@@ -963,7 +950,7 @@ benchmark-report -o my-comparison-report 2021-05-31__23_19_13 2021-05-31__23_35_
 You can create a very detailed report with more charts with `-f` switch:
 
 ```
-benchmark-report -f -o my-full-report 2021-05-31__23_19_13 
+benchmark_report -f -o my-full-report 2021-05-31__23_19_13 
 ```
 
 ## Warmup / cooldown
@@ -972,10 +959,10 @@ It's often desired to strip the beginning or the end of the test out of the resu
 of JIT compiler warmup etc. 
 
 The way how it works in Simulator is that the data is collect nevertheless. You just trim it out in the final
-report generation with the `benchmark-report` command. Example having 1 minute (60 seconds) warmup and 30 second cooldown:
+report generation with the `benchmark_report` command. Example having 1 minute (60 seconds) warmup and 30 second cooldown:
 
 ```
-benchmark-report -w 60 -c 30 -o my-trimmed-benchmark-report 2021-05-31__23_19_13
+benchmark_report -w 60 -c 30 -o my-trimmed-benchmark-report 2021-05-31__23_19_13
 ``` 
 
 # Simulator Properties reference
@@ -2134,7 +2121,7 @@ contains all the logging and performance related information from the test(s) ex
 
 To generate the performance diagrams, execute:
 ```
-benchmark-report 2017-07-13__09_18_26
+benchmark_report 2017-07-13__09_18_26
 ```
 And a `report` directory is created, containing many diagrams.
 

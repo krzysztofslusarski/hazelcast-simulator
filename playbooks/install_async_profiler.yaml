@@ -1,0 +1,52 @@
+---
+- hosts: all
+  vars:
+  - version: 2.6
+  - java_dir: /java
+  - url: "https://github.com/jvm-profiling-tools/async-profiler/releases/download/v{{ version }}/async-profiler-{{ version }}-linux-x64.tar.gz"
+  - tar_gz_filename: "{{ url | basename }}"
+
+  tasks:
+  - name: Creates Java directory
+    file:
+      path: "{{ java_dir }}"
+      state: directory
+      mode: "u=rw,g=wx,o=rwx"
+    become: yes
+
+  - name: Downloads the tar.gz
+    get_url:
+      url: "{{ url }}"
+      dest: "{{ java_dir }}"
+
+  - name: Extract the tar.gz
+    unarchive:
+      src: "{{java_dir}}/{{ tar_gz_filename }}"
+      dest: "{{ java_dir }}"
+      remote_src: yes
+      list_files: yes
+    register: archive_contents
+
+  - name: Sets kernel parameters
+    shell: |
+      echo 1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+      echo 0 | sudo tee /proc/sys/kernel/kptr_restrict
+    register: result
+  - debug: msg="{{result.stdout}}"
+
+  - name: Add ASYNC_PROFILER_HOME to PATH
+    lineinfile:
+      dest: ~{{ console_user | default(ansible_user) }}/.bashrc
+      state: present
+      line: "export PATH=$ASYNC_PROFILER_HOME/:$PATH"
+      insertbefore: BOF
+
+  - name: Update ASYNC_PROFILER_HOME
+    lineinfile:
+      dest: ~{{ console_user | default(ansible_user) }}/.bashrc
+      state: present
+      regexp: '^export ASYNC_PROFILER_HOME'
+      line: "export ASYNC_PROFILER_HOME={{ java_dir }}/{{ archive_contents.files[0].split('/')[0] }}"
+      insertbefore: BOF
+
+

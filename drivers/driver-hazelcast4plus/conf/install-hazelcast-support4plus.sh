@@ -193,7 +193,7 @@ upload_to_single_agent() {
     echo "[INFO]    Upload to $public_ip completed"
 }
 
-# uploads the installation files to all agents
+# uploads the installation files to all hidden
 upload() {
     # if there are no provided public ips, then it is a local install
     if [ -z "$public_ips" ] ; then

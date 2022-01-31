@@ -1,0 +1,44 @@
+---
+- hosts: all
+
+  vars:
+    - jdk_url:
+    - java_dir: /java
+    - tar_gz_filename: "{{ jdk_url | basename }}"
+
+  tasks:
+
+  - name: Creates Java directory
+    file:
+      path: "{{ java_dir }}"
+      state: directory
+      mode: "u=rw,g=wx,o=rwx"
+    become: yes
+
+  - name: Downloads the tar.gz
+    get_url:
+      url: "{{ jdk_url }}"
+      dest: "{{ java_dir }}"
+
+  - name: Extract the tar.gz
+    unarchive:
+      src: "{{ java_dir }}/{{ tar_gz_filename }}"
+      dest: "{{ java_dir }}"
+      remote_src: yes
+      list_files: yes
+    register: archive_contents
+
+  - name: Add JAVA_HOME to PATH
+    lineinfile:
+      dest: ~{{ console_user | default(ansible_user) }}/.bashrc
+      state: present
+      line: "export PATH=$JAVA_HOME/bin:$PATH"
+      insertbefore: BOF
+
+  - name: Update JAVA_HOME
+    lineinfile:
+      dest: ~{{ console_user | default(ansible_user) }}/.bashrc
+      state: present
+      regexp: '^export JAVA_HOME'
+      line: "export JAVA_HOME={{ java_dir}}/{{ archive_contents.files[0].split('/')[0] }}"
+      insertbefore: BOF

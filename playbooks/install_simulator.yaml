@@ -1,0 +1,113 @@
+---
+- hosts: all
+
+  vars:
+    - simulator_home:
+    - simulator_version: 0.14-SNAPSHOT
+    - simulator_dir: ~{{ console_user | default(ansible_user) }}/hazelcast-simulator-{{ simulator_version }}
+  tasks:
+
+  - name: Delete simulator directory
+    file:
+      state: absent
+      path: "{{ simulator_dir }}"
+
+  - name: Create simulator directories
+    file:
+      path: "{{ item }}"
+      state: directory
+      mode: 0775
+    loop:
+      - "{{ simulator_dir }}/lib"
+      - "{{ simulator_dir }}/user-lib"
+      - "{{ simulator_dir }}/drivers"
+
+  - name: Copy user_lib
+    ansible.builtin.copy:
+      src: "{{ simulator_home }}/user-lib"
+      dest: "{{ simulator_dir }}"
+      owner:  "{{ console_user | default(ansible_user) }}"
+      mode: preserve
+
+  - name: Copy lib
+    ansible.builtin.copy:
+      src: "{{ simulator_home }}/lib"
+      dest: "{{ simulator_dir }}"
+      owner:  "{{ console_user | default(ansible_user) }}"
+      mode: preserve
+
+  - name: Copy conf
+    ansible.builtin.copy:
+      src: "{{ simulator_home }}/conf"
+      dest: "{{ simulator_dir }}"
+      owner:  "{{ console_user | default(ansible_user) }}"
+      mode: preserve
+
+  - name: Copy bin
+    ansible.builtin.copy:
+      src: "{{ simulator_home }}/bin"
+      dest: "{{ simulator_dir }}"
+      owner: "{{ console_user | default(ansible_user) }}"
+      mode: preserve
+
+  - name: Copy simulator python files
+    ansible.builtin.copy:
+      src: "{{ simulator_home }}/simulator"
+      dest: "{{ simulator_dir }}"
+      owner: "{{ console_user | default(ansible_user) }}"
+      mode: preserve
+
+#  - name: Copy bin files
+#    synchronize:
+#      src: "{{ simulator_home }}/bin"
+#      dest: "{{ simulator_dir }}"
+#      rsync_opts:
+#        - "--no-motd"
+#        - "--exclude=__pycache__"
+
+#uploadLibraryJar(){
+#    pattern=$1
+#    src="$SIMULATOR_HOME/lib/$pattern"
+#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/lib
+#}
+#
+#uploadTestLibJar(){
+#    pattern=$1
+#    src="$SIMULATOR_HOME/drivers/driver-$VENDOR/$pattern"
+#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/drivers/driver-$VENDOR/
+#}
+#
+#uploadToRemoteSimulatorDir(){
+#    src=$1
+#    target=$2
+#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/$target
+#}
+#
+## Upload Simulator JARs
+#uploadLibraryJar "simulator-*"
+#
+## We don't copy all JARs to the AGENT to increase upload speed
+## ActiveMQ libraries
+#uploadLibraryJar "activemq-broker*"
+#uploadLibraryJar "activemq-client*"
+#uploadLibraryJar "geronimo-jms*"
+#uploadLibraryJar "geronimo-j2ee*"
+#uploadLibraryJar "slf4j-api*"
+#uploadLibraryJar "hawtbuf-*"
+#uploadLibraryJar "affinity*"
+#uploadLibraryJar "jna*"
+#
+#uploadLibraryJar "cache-api*"
+#uploadLibraryJar "commons-codec*"
+#uploadLibraryJar "commons-lang3*"
+#uploadLibraryJar "freemarker*"
+#uploadLibraryJar "gson-*"
+#uploadLibraryJar "HdrHistogram-*"
+#uploadLibraryJar "jopt*"
+#uploadLibraryJar "junit*"
+#uploadLibraryJar "log4j*"
+#uploadLibraryJar "slf4j-log4j12-*"
+#
+#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/bin/" "bin"
+#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/conf/" "conf"
+#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/user-lib/" "user-lib/"
