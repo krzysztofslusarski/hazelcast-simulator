@@ -1,10 +1,12 @@
+import tempfile
+import uuid
 from datetime import datetime
 import os
 import yaml
 import csv
 from hosts import public_ip, ssh_user, ssh_options
 from ssh import SSH
-from util import shell, run_parallel, bin_dir, exit_with_error
+from util import read, write, shell, run_parallel, bin_dir, exit_with_error
 from log import info, warn, log_header
 
 
@@ -46,11 +48,15 @@ def simulator_perftest_run(testplan, tags):
         repetitions = test['repetitions']
         for i in range(0, repetitions):
             session_id = __run_test(test)
-            simulator_perftest_collect(f"results/{session_id}", tags)
+            simulator_perftest_collect(f"runs/{session_id}", tags)
     return
 
 
 def __run_test(test):
+    exitcode = shell("coordinator --clean", use_print=True)
+    if exitcode != 0:
+        exit_with_error(f"Failed to clean, exitcode={exitcode}")
+
     args = ""
     dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     name = test['name']
@@ -108,18 +114,16 @@ def __run_test(test):
         args = f"{args} --clientType {client_type}"
 
     test = test['test']
-    with open(f"test.properties", "w") as file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="perftest_", suffix=".txt") as tmp:
         for key, value in test.items():
-            file.write(f"{key}={value}\n")
-    exitcode = shell("coordinator --clean", use_print=True)
-    if exitcode != 0:
-        exit_with_error(f"Failed to clean, exitcode={exitcode}")
+            tmp.write(f"{key}={value}\n")
+        tmp.flush()
 
-    cmd = f"coordinator {args} test.properties"
-    info(cmd)
-    exitcode = shell(cmd, use_print=True)
-    if exitcode != 0:
-        exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
+        cmd = f"coordinator {args} {tmp.name}"
+        info(cmd)
+        exitcode = shell(cmd, use_print=True)
+        if exitcode != 0:
+            exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
     return session_id
 
 
@@ -133,6 +137,12 @@ def simulator_perftest_collect(dir, tags):
     if not os.path.exists(csv_path):
         warn(f"Could not find [{csv_path}]")
         return
+
+    run_id_path = f"{dir}/run.id"
+    if not os.path.exists(run_id_path):
+        write(run_id_path, uuid.uuid4().hex)
+
+    tags['run_id'] = read(run_id_path)
 
     results = {}
     with open(csv_path, newline='') as csv_file:

@@ -29,6 +29,7 @@ def write(file, text):
     f.write(text)
     f.close()
 
+
 def remove(file):
     if not path.exists(file):
         return
@@ -37,6 +38,16 @@ def remove(file):
         os.remove(file)
     else:
         shutil.rmtree(file)
+
+
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def dump(obj):
+    for attr in dir(obj):
+        print(("obj.%s = %s" % (attr, getattr(obj, attr))))
 
 
 def load_yaml_file(path):
@@ -51,14 +62,14 @@ def load_yaml_file(path):
 class Future:
 
     def __init__(self):
-        self.__condition = Condition(Lock())
+        self.__ready = Condition(Lock())
         self.__val = None
-        self.__is_set = False
+        self.__completed = False
 
     def get(self):
-        with self.__condition:
-            while not self.__is_set:
-                self.__condition.wait()
+        with self.__ready:
+            while not self.__completed:
+                self.__ready.wait()
 
             if isinstance(self.__val, Exception):
                 raise Exception() from self.__val
@@ -67,16 +78,16 @@ class Future:
     def join(self):
         self.get()
 
-    def set(self, val):
-        with self.__condition:
-            if self.__is_set:
-                raise RuntimeError("Future has already been set")
+    def complete(self, val):
+        with self.__ready:
+            if self.__completed:
+                raise RuntimeError("Future has already been completed")
             self.__val = val
-            self.__is_set = True
-            self.__condition.notify_all()
+            self.__completed = True
+            self.__ready.notify_all()
 
     def done(self):
-        return self.__is_set
+        return self.__completed
 
 
 # Copied
@@ -90,10 +101,10 @@ class Worker(Thread):
         self.exception = None
         try:
             super().run()
-            self.future.set(True)
+            self.future.complete(True)
         except Exception as e:
             self.exception = e
-            self.future.set(e)
+            self.future.complete(e)
 
 
 # Copied

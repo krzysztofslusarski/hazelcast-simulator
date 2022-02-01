@@ -18,7 +18,6 @@ package com.hazelcast.simulator.coordinator;
 import com.hazelcast.simulator.common.SimulatorProperties;
 import com.hazelcast.simulator.common.TestCase;
 import com.hazelcast.simulator.common.TestPhase;
-import com.hazelcast.simulator.coordinator.registry.AgentData;
 import com.hazelcast.simulator.coordinator.registry.Registry;
 import com.hazelcast.simulator.coordinator.registry.WorkerQuery;
 import com.hazelcast.simulator.coordinator.tasks.AgentsClearTask;
@@ -43,7 +42,6 @@ import static com.hazelcast.simulator.utils.CommonUtils.exitWithError;
 import static com.hazelcast.simulator.utils.CommonUtils.getSimulatorVersion;
 import static com.hazelcast.simulator.utils.FileUtils.getSimulatorHome;
 import static com.hazelcast.simulator.utils.FileUtils.getUserDir;
-import static com.hazelcast.simulator.utils.SimulatorUtils.loadComponentRegister;
 import static com.hazelcast.simulator.utils.SimulatorUtils.loadSimulatorProperties;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -352,46 +350,11 @@ final class CoordinatorCli {
 
     private Registry newRegistry() {
         Registry registry;
-        registry = loadComponentRegister(
-                locateInventoryFile());
+        registry = Registry.loadInventoryYaml(
+                locateInventoryFile(),
+                options.valueOf(loadGeneratorGroupSpec),
+                options.valueOf(nodeGroupSpec));
 
-        String nodeGroup = options.valueOf(nodeGroupSpec);
-        String loadGeneratorGroup = options.valueOf(loadGeneratorGroupSpec);
-
-        for (AgentData agent : registry.getAgents()) {
-            String group = agent.getTags().get("group");
-
-            if (group == null) {
-                throw new RuntimeException();
-            }
-
-            if (nodeGroup == null) {
-                if (loadGeneratorGroup == null) {
-                    break;
-                } else {
-                    if (!loadGeneratorGroup.equals(group)) {
-                        throw new RuntimeException("");
-                    }
-                }
-            } else {
-                if (loadGeneratorGroup == null) {
-
-                } else {
-
-                }
-            }
-
-            if (nodeGroup != null && loadGeneratorGroup == null) {
-            }
-
-            if (loadGeneratorGroup != null && loadGeneratorGroup.equals(group)) {
-                agent.setAgentWorkerMode(AgentData.AgentWorkerMode.CLIENTS_ONLY);
-            }
-
-            if (nodeGroup != null && nodeGroup.equals(group)) {
-                agent.setAgentWorkerMode(AgentData.AgentWorkerMode.MEMBERS_ONLY);
-            }
-        }
 
         if (options.has(dedicatedMemberMachinesSpec)) {
             registry.assignDedicatedMemberMachines(options.valueOf(dedicatedMemberMachinesSpec));
@@ -436,7 +399,7 @@ final class CoordinatorCli {
             throw new CommandLineExitException(format("Agents file [%s] does not exist", file));
         }
 
-        LOGGER.info("Loading Agents file: " + file.getAbsolutePath());
+        LOGGER.info("Loading inventory file: " + file.getAbsolutePath());
         return file;
     }
 

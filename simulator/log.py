@@ -12,11 +12,11 @@ class Level(enum.Enum):
     error = 3
 
 
-def log_host(ip, msg, level=Level.info):
+def log_host(host, msg, level=Level.info):
     if not msg:
         return
 
-    prefix = f"{ip}".ljust(15, " ") + "    "
+    prefix = f"{host}".ljust(15, " ") + "    "
     log(f"{prefix} {msg}", level=level)
 
 

@@ -13,7 +13,7 @@ from util import load_yaml_file, exit_with_error, remove, simulator_home, write,
 from perftest_report import PerfTestReportCli
 from perftest_simulator import simulator_perftest_run, simulator_perftest_terminate, simulator_perftest_collect
 
-default_testplan_path = 'testplan.yaml'
+default_test_path = 'test.yaml'
 inventory_path = 'inventory.yaml'
 usage = '''perftest <command> [<args>]
 
@@ -143,7 +143,7 @@ class PerftestCloneCli:
     def __clone(self, src, dest):
         shutil.copytree(src, dest)
 
-        remove(f"{dest}/results")
+        remove(f"{dest}/runs")
         remove(f"{dest}/logs")
         remove(f"{dest}/venv")
         remove(f"{dest}/.idea")
@@ -171,16 +171,16 @@ class PerftestRunCli:
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='Runs the testplan')
-        parser.add_argument('file', nargs='?', help='The testplan file', default=default_testplan_path)
+        parser.add_argument('file', nargs='?', help='The test file', default=default_test_path)
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs='+', action='append')
         args = parser.parse_args(sys.argv[2:])
-        testplan = load_yaml_file(args.file)
+        test = load_yaml_file(args.file)
         tags = parse_tags(args.tag)
 
-        loadgenerator = testplan['loadgenerator']
+        loadgenerator = test['loadgenerator']
 
         if loadgenerator == "simulator":
-            simulator_perftest_run(testplan, tags)
+            simulator_perftest_run(test, tags)
         else:
             exit_with_error(f"Unknown loadgenerator {loadgenerator}")
 
@@ -188,10 +188,10 @@ class PerftestRunCli:
 class PerftestTerminateCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Terminates running testplan')
+        parser = argparse.ArgumentParser(description='Terminates running performance test')
         args = parser.parse_args(sys.argv[2:])
 
-        testplan = load_yaml_file(default_testplan_path)
+        testplan = load_yaml_file(default_test_path)
         inventory = load_flattened_inventory()
 
         loadgenerator = testplan['loadgenerator']
@@ -205,17 +205,21 @@ class PerftestCollectCli:
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='Collects the results from a performance test')
-        parser.add_argument("dir", help="The directory with the test results")
+        parser.add_argument("dir", help="The directory with the test runs")
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs='+', action='append')
         args = parser.parse_args(sys.argv[2:])
         tags = parse_tags(args.tag)
 
-        testplan = load_yaml_file(default_testplan_path)
+        log_header("perftest collect")
+
+        testplan = load_yaml_file(default_test_path)
         loadgenerator = testplan['loadgenerator']
         if loadgenerator == "simulator":
             simulator_perftest_collect(args.dir, tags)
         else:
             exit_with_error(f"Unknown loadgenerator {loadgenerator}")
+
+        log_header("perftest collect: done")
 
 
 class PerftestCli:

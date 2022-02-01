@@ -10,20 +10,10 @@ import shutil
 import sys
 from collections import Counter
 import base64
-from util import simulator_home
+from util import simulator_home, ensure_dir
 
 
 # ================ utils ========================
-
-
-def dump(obj):
-    for attr in dir(obj):
-        print(("obj.%s = %s" % (attr, getattr(obj, attr))))
-
-
-def ensure_dir(file_path):
-    if not os.path.exists(file_path):
-        os.makedirs(file_path)
 
 
 # Returns the name of the agent this worker belongs to
@@ -40,6 +30,7 @@ def agent_for_worker(worker_name):
 # ================ plotting =========================
 
 class Gnuplot:
+
     image_width = 1280
     image_height = 1024
     image_path = None
@@ -135,6 +126,7 @@ class Gnuplot:
 
 
 class TimeseriesGnuplot(Gnuplot):
+
     def __init__(self, directory, title, basefilename=None):
         Gnuplot.__init__(self, directory, title, basefilename)
 
@@ -197,6 +189,7 @@ class TimeseriesGnuplot(Gnuplot):
 
 
 class LatencyDistributionGnuplot(Gnuplot):
+
     def __init__(self, directory, title, basefilename=None):
         Gnuplot.__init__(self, directory, title, basefilename)
 
@@ -240,41 +233,6 @@ class LatencyDistributionGnuplot(Gnuplot):
 
         self._complete()
 
-
-class GoogleCharts:
-    def __init__(self, ts, directory, title):
-        self.title = title
-        self.ts = ts
-        self.directory = directory
-        with open('chart_template.html', 'r') as f:
-            self.chart_template = f.read()
-
-    def plot(self):
-        filepath = os.path.join(self.directory, self.ts.name + ".html")
-        empty = True
-        for ts in ts_list:
-            if not ts.is_empty():
-                empty = False
-                break
-
-        if empty:
-            print("Skipping plot of " + filepath + "; timeseries are empty")
-            return
-
-        rows = ""
-        first = True
-        for item in self.ts.items:
-            rows += "[" + str(item.time) + "," + str(item.value) + "]"
-            if first:
-                rows += ","
-            rows += "\n"
-
-        chart = self.chart_template.replace("$rows", rows)
-        ensure_dir(self.directory)
-
-        with open(filepath, 'w') as f:
-            f.write(chart)
-        print(filepath)
 
 
 seriesCounter = Counter()

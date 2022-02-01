@@ -3,7 +3,7 @@ import selectors
 import subprocess
 import time
 
-from util import Worker, shell, exit_with_error
+from util import shell, exit_with_error
 from log import Level, log_host
 
 
@@ -25,21 +25,21 @@ class SSH:
                  ssh_options,
                  silent_seconds=30,
                  use_control_socket=True,
-                 log_ssh=False):
+                 log_enabled=False):
         self.ip = ip
         self.ssh_user = ssh_user
         self.ssh_options = ssh_options
         self.silent_seconds = silent_seconds
-        self.log_ssh = log_ssh
+        self.log_enabled = log_enabled
         if use_control_socket:
             self.control_socket_file = f"/tmp/{self.ssh_user}@{self.ip}.socket"
         else:
             self.control_socket_file = None
 
     def wait(self):
-        self.__wait_for_connect()
+        self.__wait()
 
-    def __wait_for_connect(self):
+    def __wait(self):
         args = f"-o ConnectTimeout=1 -o ConnectionAttempts=1 {self.ssh_options}"
         if self.control_socket_file:
             if os.path.exists(self.control_socket_file):
@@ -85,12 +85,12 @@ class SSH:
         self.__scp(cmd)
 
     def __scp(self, cmd):
-        self.__wait_for_connect()
+        self.__wait()
         exitcode = subprocess.call(cmd, shell=True)
         # raise Exception(f"Failed to execute {cmd} after {self.max_attempts} attempts")
 
     def exec(self, command, ignore_errors=False):
-        self.__wait_for_connect()
+        self.__wait()
 
         cmd_list = ["ssh"]
         if self.__is_connected():
@@ -100,7 +100,7 @@ class SSH:
         cmd_list.append(f"{self.ssh_user}@{self.ip}")
         cmd_list.append(command)
 
-        if self.log_ssh:
+        if self.log_enabled:
             log_host(self.ip, cmd_list)
 
         process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -122,8 +122,3 @@ class SSH:
                 log_level = Level.info if key.fileobj is process.stdout else Level.warn
                 for line in lines:
                     log_host(self.ip, line, log_level)
-
-    def async_exec(self, command):
-        thread = Worker(self.exec, (command))
-        thread.start()
-        return thread.future

@@ -29,6 +29,6 @@ echo "Agent [${AGENT_INDEX}] ${PUBLIC_IP} starting"
 
 args="--addressIndex ${AGENT_INDEX} --publicAddress ${PUBLIC_IP} --port $AGENT_PORT"
 nohup hazelcast-simulator-${SIMULATOR_VERSION}/bin/hidden/agent $args > agent.out 2> agent.err < /dev/null &
-hazelcast-simulator-${SIMULATOR_VERSION}/bin/hidden/await-file-exists agent.pid
+hazelcast-simulator-${SIMULATOR_VERSION}/bin/hidden/await_file_exists agent.pid
 
 echo "Agent [A$AGENT_INDEX] ${PUBLIC_IP} started successfully"
