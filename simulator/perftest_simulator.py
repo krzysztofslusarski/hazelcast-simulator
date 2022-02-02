@@ -75,7 +75,7 @@ def __run_test(test):
 
     loadgenerator_group = test.get('loadgenerator_group')
     if loadgenerator_group:
-        args = f"{args} --loadgeneratorGroup {loadgenerator_group}"
+        args = f"{args} --loadGeneratorGroup {loadgenerator_group}"
 
     client_args = test.get('client_args')
     if client_args:
@@ -129,6 +129,8 @@ def __run_test(test):
 
 def simulator_perftest_collect(dir, tags):
     report_dir = f"{dir}/report"
+
+    info(f"dir={dir}")
 
     if not os.path.exists(report_dir):
         shell(f"perftest report  -o {report_dir} {dir}")

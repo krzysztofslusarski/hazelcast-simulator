@@ -31,6 +31,7 @@ The available commands are:
 def parse_tag(s):
     items = s.split('=')
     key = items[0].strip()  # we remove blanks around keys, as is logical
+    value = None
     if len(items) > 1:
         # rejoin the rest:
         value = '='.join(items[1:])
@@ -170,15 +171,14 @@ class PerftestCloneCli:
 class PerftestRunCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Runs the testplan')
+        parser = argparse.ArgumentParser(description='Runs the test')
         parser.add_argument('file', nargs='?', help='The test file', default=default_test_path)
-        parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs='+', action='append')
+        parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         args = parser.parse_args(sys.argv[2:])
         test = load_yaml_file(args.file)
         tags = parse_tags(args.tag)
 
         loadgenerator = test['loadgenerator']
-
         if loadgenerator == "simulator":
             simulator_perftest_run(test, tags)
         else:
@@ -206,8 +206,9 @@ class PerftestCollectCli:
     def __init__(self):
         parser = argparse.ArgumentParser(description='Collects the results from a performance test')
         parser.add_argument("dir", help="The directory with the test runs")
-        parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs='+', action='append')
+        parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         args = parser.parse_args(sys.argv[2:])
+
         tags = parse_tags(args.tag)
 
         log_header("perftest collect")
@@ -225,7 +226,7 @@ class PerftestCollectCli:
 class PerftestCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Execution and analysis of testplans', usage=usage)
+        parser = argparse.ArgumentParser(description='Management and execution of performance tests', usage=usage)
         parser.add_argument('command', help='Subcommand to run')
 
         args = parser.parse_args(sys.argv[1:2])

@@ -3,6 +3,7 @@ import argparse
 
 from ssh import new_key
 
+
 class NewKeyCli:
 
     def __init__(self):
