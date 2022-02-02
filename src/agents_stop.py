@@ -2,9 +2,9 @@
 
 import yaml
 import sys
-from hosts import public_ip, ssh_user, ssh_options
-from util import run_parallel, simulator_version
-from ssh import SSH
+from simulator.hosts import public_ip, ssh_user, ssh_options
+from simulator.util import run_parallel, simulator_version
+from simulator.ssh import SSH
 
 
 def __agent_stop(agent):

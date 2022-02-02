@@ -3,8 +3,8 @@ import selectors
 import subprocess
 import time
 
-from util import shell, exit_with_error
-from log import Level, log_host
+from simulator.util import shell, exit_with_error
+from simulator.log import Level, log_host
 
 
 def new_key(key_path="key"):

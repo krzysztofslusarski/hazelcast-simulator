@@ -4,8 +4,8 @@ from os import path
 import subprocess
 import yaml
 
-from util import shell, exit_with_error, read
-from log import info
+from simulator.util import shell, exit_with_error, read
+from simulator.log import info
 
 
 def terraform_apply(inventory_plan_yaml, force=False):

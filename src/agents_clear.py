@@ -2,9 +2,9 @@
 
 import yaml
 import sys
-from ssh import SSH
-from util import simulator_version, run_parallel
-from hosts import public_ip, ssh_user, ssh_options
+from simulator.ssh import SSH
+from simulator.util import simulator_version, run_parallel
+from simulator.hosts import public_ip, ssh_user, ssh_options
 
 
 def __agent_clear(agent):

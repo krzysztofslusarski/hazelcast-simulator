@@ -1,5 +1,3 @@
-loadgenerator: simulator
-
 tests:
 - name: read_only
   repetitions: 1

@@ -52,7 +52,7 @@
 
   - name: Copy simulator python files
     ansible.builtin.copy:
-      src: "{{ simulator_home }}/simulator"
+      src: "{{ simulator_home }}/src"
       dest: "{{ simulator_dir }}"
       owner: "{{ console_user | default(ansible_user) }}"
       mode: preserve

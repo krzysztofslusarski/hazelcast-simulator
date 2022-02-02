@@ -415,6 +415,6 @@ public final class FileUtils {
     }
 
     public static String locatePythonFile(String fileName) {
-        return getSimulatorHome() + "/simulator/" + fileName;
+        return getSimulatorHome() + "/src/" + fileName;
     }
 }

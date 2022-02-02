@@ -2,8 +2,8 @@
 
 import yaml
 import sys
-from util import shell, run_parallel, simulator_home, simulator_version
-from hosts import public_ip, ssh_user, ssh_options
+from simulator.util import shell, run_parallel, simulator_home, simulator_version
+from simulator.hosts import public_ip, ssh_user, ssh_options
 
 
 def __upload_driver(agent):

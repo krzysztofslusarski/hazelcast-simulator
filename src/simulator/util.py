@@ -9,7 +9,7 @@ from threading import Lock, Condition
 import pkg_resources
 import yaml
 
-from log import Level, error, log
+from simulator.log import Level, error, log
 
 module_dir = os.path.dirname(pkg_resources.resource_filename(__name__, '__init__.py'))
 simulator_version = "0.14-SNAPSHOT"

@@ -5,8 +5,8 @@ import subprocess
 import time
 from pathlib import Path
 
-from log import info, log_header
-from util import exit_with_error, load_yaml_file
+from simulator.log import info, log_header
+from simulator.util import exit_with_error, load_yaml_file
 
 
 class InfluxImporterCli:

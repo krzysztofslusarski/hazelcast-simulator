@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse
 
-from ssh import new_key
+from simulator.ssh import new_key
 
 
 class NewKeyCli:

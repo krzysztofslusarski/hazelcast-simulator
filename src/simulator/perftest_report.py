@@ -10,7 +10,7 @@ import shutil
 import sys
 from collections import Counter
 import base64
-from util import simulator_home, ensure_dir
+from simulator.util import simulator_home, ensure_dir
 
 
 # ================ utils ========================
@@ -212,7 +212,7 @@ class LatencyDistributionGnuplot(Gnuplot):
         self._write("set style line 1 lt 1 lw 3 pt 3 linecolor rgb \"red\"")
         self._write("set output '" + self.image_path + "'")
 
-        self._write("plot '" + simulator_home + "/simulator/xlabels.csv' notitle with labels center offset 0, 1.5 point,\\")
+        self._write("plot '" + simulator_home + "/src/simulator/xlabels.csv' notitle with labels center offset 0, 1.5 point,\\")
         for ts in self.ts_list:
             ts_file = ts.to_data_file()
 

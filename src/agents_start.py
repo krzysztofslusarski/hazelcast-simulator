@@ -2,9 +2,9 @@
 
 import yaml
 import sys
-from util import run_parallel,bin_dir,simulator_version
-from hosts import public_ip, ssh_user, ssh_options
-from ssh import SSH
+from simulator.util import run_parallel,bin_dir,simulator_version
+from simulator.hosts import public_ip, ssh_user, ssh_options
+from simulator.ssh import SSH
 
 
 def __start_agent(agent):

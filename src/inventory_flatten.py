@@ -4,7 +4,7 @@ import subprocess
 
 import yaml
 from yaml import dump
-from util import exit_with_error
+from simulator.util import exit_with_error
 
 inventory_plan_path = 'inventory_plan.yaml'
 inventory_path = 'inventory.yaml'

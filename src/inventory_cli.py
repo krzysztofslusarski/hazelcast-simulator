@@ -3,10 +3,10 @@ import sys
 import argparse
 from os import path
 
-from inventory_terraform import terraform_import, terraform_destroy, terraform_apply
-from util import load_yaml_file, exit_with_error, simulator_home, shell, simulator_version
-from log import info, log_header
-from ssh import new_key
+from simulator.inventory_terraform import terraform_import, terraform_destroy, terraform_apply
+from simulator.util import load_yaml_file, exit_with_error, simulator_home, shell, simulator_version
+from simulator.log import info, log_header
+from simulator.ssh import new_key
 
 inventory_plan_path = 'inventory_plan.yaml'
 

@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 import yaml
 import sys
-from hosts import public_ip, ssh_user, ssh_options
-from ssh import SSH
-from util import run_parallel
+from simulator.hosts import public_ip, ssh_user, ssh_options
+from simulator.ssh import SSH
+from simulator.util import run_parallel
 
 
 def ___agent_ping(agent):
