@@ -10,7 +10,7 @@ target/
 simulator-git.properties
 logs/
 .attach_pid*
-drivers/
+/drivers/
 venv/
 lib/
 src/simulator/__pycache__/

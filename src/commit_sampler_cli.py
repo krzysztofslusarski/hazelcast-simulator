@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 import subprocess
-import os
 import argparse
 import random
+
+from simulator.util import validate_git_repo
 
 
 class CommitSamplerCli:
@@ -20,16 +21,8 @@ class CommitSamplerCli:
 
         first = args.first[0]
         last = args.last[0]
-        repo = args.repo[0]
+        repo = validate_git_repo(args.repo[0])
         count = args.count[0]
-
-        if not os.path.isdir(f"{repo}/"):
-            print(f"Repo directory [{repo}] does not exist")
-            exit(1)
-
-        if not os.path.isdir(f"{repo}/.git"):
-            print(f"Repo directory [{repo}] does not contain a git repository")
-            exit(1)
 
         cmd = f"""
             set -e

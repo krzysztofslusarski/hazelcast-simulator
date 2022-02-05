@@ -7,14 +7,17 @@ import os
 import argparse
 from pathlib import Path
 
+from simulator.util import validate_git_repo
 
-def bash(cmd):
+
+def bash(cmd, exit_on_error=True):
     log = 'run.log'
     with open(log, "a") as f:
         result = subprocess.run(cmd, shell=True, text=True, stdout=f, stderr=f)
-        if result.returncode != 0:
+        if result.returncode != 0 and exit_on_error:
             print(f"Failed to run [{cmd}], exitcode: {result.returncode}. Check {log} for details.")
             exit(1)
+        return  result.returncode
 
 
 def now_seconds():
@@ -33,13 +36,12 @@ def get_project_version(dir):
 def run(testname, commit, runs, repo):
     version = get_project_version(repo)
     commit_dir = f"{testname}/{commit}"
-    print("--------------------------------------------------------")
-    print(f"Running {commit_dir}, runs; "+runs)
+    print(f"Running {commit_dir}, runs {runs} ")
     print(f"Version:[{version}]")
     for i in range(0, runs):
         dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         session_id = f"{commit_dir}/{dt}"
-        print(f"{run+1} {session_id}")
+        print(f"{i+1} {session_id}")
 
         bash(f"""
             $SIMULATOR_HOME/bin/hidden/coordinator     \
@@ -64,15 +66,14 @@ def run(testname, commit, runs, repo):
 
 
 def build(commit, repo):
-    print(f"Building {commit} [{repo}]")
-    bash(f"""
+    exitcode = bash(f"""
         set -e
         cd {repo}
         git pull origin master
         git checkout {commit}         
         mvn clean install -DskipTests -Dquick
-    """)
-
+    """, exit_on_error=False)
+    return exitcode == 0
 
 class RunCli:
     def __init__(self):
@@ -85,11 +86,7 @@ class RunCli:
         args = parser.parse_args()
         commits = args.commits
         count = args.count
-
-        repo = args.repo[0]
-        if not os.path.isdir(repo):
-            print(f"Repo directory [{repo}] does not exist")
-            exit(1)
+        repo = validate_git_repo(args.repo[0])
 
         start = now_seconds()
         for commit in commits:
@@ -103,7 +100,11 @@ class RunCli:
                 print(f"Skipping commit {commit}, test {test}, sufficient runs")
                 continue
 
-            build(commit, repo)
+            print("--------------------------------------------------------")
+            print(f"Building {commit}")
+            if not build(commit, repo):
+                print("Build failed, skipping runs.")
+                continue
             run(test, commit, remaining, repo)
 
         duration = now_seconds() - start

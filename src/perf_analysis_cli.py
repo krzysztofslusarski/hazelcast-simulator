@@ -4,14 +4,11 @@ import os
 import statistics
 import subprocess
 from enum import Enum
-
-import yaml
 import numpy as np
 import matplotlib.pyplot as plt
-from statistics import mean
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
-from simulator.util import load_yaml_file
+from simulator.util import load_yaml_file, validate_git_repo, validate_dir, exit_with_error
 
 
 class TimeSeries:
@@ -46,7 +43,7 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, cps=None, aps=None, ymin=0):
+def plot(ts, filename, cps=None, aps=None, ymin=0, ):
     if cps and aps:
         plt.title(f"Changepoints and anomalies: {ts.name}")
     elif cps:
@@ -56,6 +53,10 @@ def plot(ts, cps=None, aps=None, ymin=0):
     else:
         plt.title(f"{ts.name}")
 
+    my_dpi = 96
+    plt.figure(figsize=(1600 / my_dpi, 900 / my_dpi), dpi=my_dpi)
+    plt.xticks(rotation=90)
+    plt.grid()
     plt.xlabel(ts.x_label)
     plt.ylabel(ts.y_label)
     plt.plot(ts.x, ts.y, color="orange")
@@ -77,7 +78,8 @@ def plot(ts, cps=None, aps=None, ymin=0):
         plt.ylim(ymin=0)
     elif ymin:
         plt.ylim(ymin=ymin)
-    plt.show()
+    plt.subplots_adjust(bottom=0.4)
+    plt.savefig(filename)
 
 
 def collect_anomalies(ts, aps, direction):
@@ -147,39 +149,74 @@ class ChangePoint:
         self.direction = direction
 
 
-def load_timeseries(dir, repo):
-    cmd = f"order_commits --repo {repo} {dir}"
+def load_commit_dir(dir, commit):
+    commit_dir = f"{dir}/{commit}"
+    result = {}
+    for run in os.listdir(commit_dir):
+        results_file = f"{commit_dir}/{run}/results.yaml"
+        if not os.path.exists(results_file):
+            continue
+
+        results_yaml = load_yaml_file(results_file)
+        for test, map in results_yaml.items():
+            measurements = map['measurements']
+            for name, value in measurements.items():
+                values = result.get(value)
+                if not values:
+                    values = []
+                    result[name] = values
+                values.append((commit, value))
+    return result
+
+
+def pick_best_value(values):
+    best = None
+    for (commit, value) in values:
+        if not best or value < best[1]:
+            best = (commit, value)
+    return best
+
+
+def get_ordered_commits(dir, repo):
+    commits = []
+    for file in os.listdir(dir):
+        if os.path.isdir(f"{dir}/{file}"):
+            filename = os.fsdecode(file)
+            commits.append(filename)
+
+    if not commits:
+        exit_with_error(f"No commits found in directory [dir]")
+
+    cmd = f"order_commits --repo {repo} {' '.join(commits)}"
     ordered_commits = subprocess.check_output(cmd, shell=True, text=True).splitlines()
+    return ordered_commits
 
-    y_list = []
-    x_list = []
 
-    metric_name = '90%(us)'
+def load_timeseries(dir, repo):
+    y_map = {}
+    x_map = {}
+    for commit in get_ordered_commits(dir, repo):
+        result = load_commit_dir(dir, commit)
 
-    for commit in ordered_commits:
-        commit_dir = f"{dir}/{commit}"
-        min_throughput = None
+        for metric_name, values in result.items():
+            (commit, value) = pick_best_value(values)
 
-        for run in os.listdir(commit_dir):
-            yaml_file = f"{commit_dir}/{run}/results.yaml"
-            if os.path.exists(yaml_file):
-                perf_data = load_yaml_file(yaml_file)
-                for test, map in perf_data.items():
-                    measurements = map['measurements']
-                    throughput = float(measurements[metric_name])
-                    if not min_throughput:
-                        min_throughput = throughput
-                    else:
-                        min_throughput = min(min_throughput, throughput)
+            y = y_map.get(metric_name)
+            x = x_map.get(metric_name)
+            if not y:
+                y = []
+                y_map[metric_name] = y
+                x = []
+                x_map[metric_name] = x
+            y.append(value)
+            x.append(commit)
 
-        if min_throughput:
-            y_list.append(min_throughput)
-
-    y_list.reverse()
-
-    y = np.array(y_list, dtype=float)
-    x = np.arange(0, len(y))
-    return TimeSeries(x, y, x_label="Commit", y_label=metric_name, name=metric_name)
+    result = {}
+    for metric_name in y_map.keys():
+        y = np.array(y_map[metric_name], dtype=float)
+        x = np.array(x_map[metric_name])
+        result[metric_name] = TimeSeries(x, y, x_label="Commit", y_label=metric_name, name=metric_name)
+    return result
 
 
 def changepoint_detection(ts):
@@ -202,31 +239,25 @@ class PerfAnalysisCli:
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
 
         args = parser.parse_args()
-        dir = args.dir[0]
-        repo = args.repo[0]
+        repo = validate_git_repo(args.repo[0])
         latest = args.latest[0]
-        if not os.path.isdir(dir):
-            print(f"Directory [{dir}] does not exist")
-            exit(1)
-
-        if not os.path.isdir(repo):
-            print(f"Repo directory [{repo}] does not exist")
-            exit(1)
-
+        dir = validate_dir(args.dir[0])
         # We need to determine if the time series has 'positive' or 'negative'
 
-        ts = load_timeseries(dir, repo)
+        result = load_timeseries(dir, repo)
+        for metric, ts in result.items():
+            if latest:
+                print(f"Taking the last {latest} items of timeseries with {len(ts)} items")
+                ts = ts.newest(latest)
 
-        if latest:
-            print(f"Taking the last {latest} items of timeseries with {len(ts)} items")
-            ts = ts.newest(latest)
+            print(f"length timeseries {len(ts)}")
+            cps = changepoint_detection(ts)
+            aps = anomaly_detection(ts, n=4)
 
-        print(f"length timeseries {len(ts)}")
-        cps = changepoint_detection(ts)
-        aps = anomaly_detection(ts, n=4)
+            ymin = 0 if args.zero else None
 
-        ymin = 0 if args.zero else None
-        plot(ts, cps=cps, aps=aps, ymin=ymin)
+            filename = f"/home/pveentjer/tmp/{metric}.png"
+            plot(ts, filename, cps=cps, aps=aps, ymin=ymin )
 
 
 if __name__ == '__main__':

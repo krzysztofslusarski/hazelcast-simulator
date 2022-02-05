@@ -10,7 +10,7 @@ import shutil
 import sys
 from collections import Counter
 import base64
-from simulator.util import simulator_home, ensure_dir
+from simulator.util import simulator_home, mkdir
 
 
 # ================ utils ========================
@@ -115,7 +115,7 @@ class Gnuplot:
 
         self.is_bytes = ts_first.is_bytes
         self.is_points = ts_first.is_points
-        ensure_dir(self.directory)
+        mkdir(self.directory)
         self.script_file = open(script_path, "w")
         self._plot()
 
@@ -286,7 +286,7 @@ class Series:
 
     def to_data_file(self):
         data_dir = os.path.join(report_dir, "data")
-        ensure_dir(data_dir)
+        mkdir(data_dir)
 
         count = seriesCounter.get(self.name, 1)
         seriesCounter[self.name] = count + 1
@@ -922,7 +922,7 @@ class Comparison:
 
     def output_dir(self, name):
         output_dir = os.path.join(report_dir, name)
-        ensure_dir(output_dir)
+        mkdir(output_dir)
         return output_dir
 
     # makes the actual comparison report.

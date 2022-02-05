@@ -35,3 +35,5 @@ for driver_dir_name in os.listdir("java/drivers"):
 empty_dir("lib")
 os.system(f"cp java/simulator/target/*.jar lib/")
 os.system(f"cp java/extra/* lib/")
+os.system(f"rm drivers/driver-hazelcast4plus/hazelcast-*.jar")
+os.system(f"rm drivers/driver-hazelcast3/hazelcast-*.jar")

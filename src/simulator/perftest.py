@@ -212,8 +212,8 @@ class PerfTest:
                     '99.9%(us)': row[9],
                     '99.99%(us)': row[10],
                     'max(us)': row[11],
-                    'operations': row[11],
-                    'duration(ms)': row[11],
+                    'operations': row[12],
+                    'duration(ms)': row[13],
                     'throughput': row[14]}
                 results[row[1]] = {'tags': tags, 'measurements': measurements}
 

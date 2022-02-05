@@ -40,10 +40,30 @@ def remove(file):
         shutil.rmtree(file)
 
 
-def ensure_dir(path):
+def validate_git_repo(path):
+    validate_dir(path)
+
+    if not os.path.isdir(f"{path}/.git"):
+        print(f"Directory [{path}] does not contain a git repository")
+        exit(1)
+
+    return path
+
+def validate_dir(path):
+    if not os.path.exists(path):
+        print(f"Directory [{path}] does not exist")
+        exit(1)
+
+    if not os.path.isdir(f"{path}/"):
+        print(f"Directory [{path}] is not a directory")
+        exit(1)
+
+    return path
+
+def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
-
+    return path
 
 def dump(obj):
     for attr in dir(obj):

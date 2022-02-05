@@ -2,17 +2,9 @@
 
 import subprocess
 import tempfile
-import os
 import argparse
 
-
-def load_commit_directories(dir):
-    commits = []
-    for file in os.listdir(dir):
-        if os.path.isdir(f"{dir}/{file}"):
-            filename = os.fsdecode(file)
-            commits.append(filename)
-    return commits
+from simulator.util import validate_git_repo
 
 
 def load_commits(repo):
@@ -38,29 +30,23 @@ def order(commits, repo):
             git rev-list --date-order  $(cat {tmp.name}) | grep --file {tmp.name} --max-count $(wc -l < {tmp.name})
             """
         out = subprocess.check_output(cmd, shell=True, text=True)
-        return out.splitlines()
+        result = out.splitlines()
+        result.reverse()
+        return result
 
 
 class OrderCommitsCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Returns an ordered list of commits for a results directory')
-        parser.add_argument("dir", help="The directory containing the commit hashes", nargs=1)
-        parser.add_argument("--repo", help="The directory containing the git repo", nargs=1, default=['hazelcast'])
+        parser = argparse.ArgumentParser(
+            description='Returns an ordered list (from old to new) of commits')
+        parser.add_argument("commits", nargs="+", help="The commits to order")
+        parser.add_argument("-r", "--repo", help="The directory containing the git repo", nargs=1,
+                            default=['hazelcast'])
         parser.add_argument("-d", "--debug", help="Print the commits including timestamp", action='store_true')
         args = parser.parse_args()
-        dir = args.dir[0]
-        repo = args.repo[0]
-        if not os.path.isdir(dir):
-            print(f"Directory [{dir}] does not exist")
-            exit(1)
-
-
-        if not os.path.isdir(repo):
-            print(f"Repo directory [{repo}] does not exist")
-            exit(1)
-
-        commits = load_commit_directories(dir)
+        repo = validate_git_repo(args.repo[0])
+        commits = args.commits
         ordered = order(commits, repo)
 
         if args.debug:
