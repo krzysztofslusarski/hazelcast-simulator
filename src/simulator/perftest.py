@@ -24,7 +24,7 @@ class PerfTest:
         log_header(f"perftest terminate: started")
 
     def __terminate(self, group_class, inventory, workload):
-        hosts = self.__collect(inventory, workload[group_class]['group'])
+        hosts = self.__gather(inventory, workload[group_class]['group'])
         if not hosts:
             return
         run_parallel(self.__kill_java, [(host,) for host in hosts])
@@ -34,8 +34,7 @@ class PerfTest:
         ssh.scp_to_remote(f"{bin_dir}/hidden/kill_java", ".")
         ssh.exec("./kill_java")
 
-    # rename
-    def __collect(self, inventory, desired_groupname=None):
+    def __gather(self, inventory, desired_groupname=None):
         if not desired_groupname:
             return inventory
 
@@ -141,8 +140,7 @@ class PerfTest:
                 exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
         return session_id
 
-    def run(self, testplan, tags):
-        tests = testplan['tests']
+    def run(self, tests, tags):
         for test in tests:
             repetitions = test['repetitions']
             for i in range(0, repetitions):
@@ -157,7 +155,7 @@ class PerfTest:
         self.exec(
             test['test'],
             session_id=session_id,
-            duration=f"{test['duration_seconds']}s",
+            duration=test.get('duration'),
             performance_monitor_interval_seconds=test.get('performance_monitor_interval_seconds'),
             node_group=test.get('node_group'),
             loadgenerator_group=test.get('loadgenerator_group'),

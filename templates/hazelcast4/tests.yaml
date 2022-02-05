@@ -1,7 +1,6 @@
-tests:
 - name: read_only
   repetitions: 1
-  duration_seconds: 30
+  duration: 30s
   clients: 1
   members: 1
   driver: hazelcast5
@@ -18,7 +17,7 @@ tests:
       keyCount: 1_000_000
 
 - name: write_only
-  duration_seconds: 30
+  duration: 30s
   repetitions: 0
   clients: 1
   members: 1

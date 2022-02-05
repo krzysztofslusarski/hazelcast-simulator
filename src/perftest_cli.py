@@ -13,15 +13,16 @@ from simulator.ssh import new_key
 from simulator.util import load_yaml_file, exit_with_error, remove, simulator_home, write, read
 from simulator.perftest_report import PerfTestReportCli
 
-default_test_path = 'test.yaml'
+default_tests_path = 'tests.yaml'
 inventory_path = 'inventory.yaml'
 usage = '''perftest <command> [<args>]
 
 The available commands are:
-    create      Clones an existing performance test.
+    create      Creates a new performance test based on a template.
     clone       Clones an existing performance test.
     collect     Collects the performance test data and stores it in result.yaml.
-    run         Runs the performance test
+    exec        Executes a performance test.'
+    run         Runs a tests.yaml which is a self contained set of tests'
     terminate   Terminate all running performance tests.   
     report      Generate performance report 
 '''
@@ -51,7 +52,7 @@ def parse_tags(items):
 class PerftestCreateCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser("Creating a new performance test based a template.")
+        parser = argparse.ArgumentParser("Creates a new performance test based on a template")
         parser.add_argument("name",
                             help="The name of the performance test.", nargs='?')
         parser.add_argument("--template",
@@ -171,22 +172,22 @@ class PerftestCloneCli:
 class PerftestRunCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Runs the test')
-        parser.add_argument('file', nargs='?', help='The test file', default=default_test_path)
+        parser = argparse.ArgumentParser(description='Runs a tests.yaml which is a self contained set of tests')
+        parser.add_argument('file', nargs='?', help='The tests file', default=default_tests_path)
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         args = parser.parse_args(sys.argv[2:])
-        test = load_yaml_file(args.file)
         tags = parse_tags(args.tag)
 
+        tests = load_yaml_file(args.file)
         perftest = PerfTest()
-        perftest.run(test, tags)
+        perftest.run(tests, tags)
 
 
 class PerftestExecCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Exec the test')
-        parser.add_argument('file', nargs='?', help='The test file', default=default_test_path)
+        parser = argparse.ArgumentParser(description='Executes a performance test.')
+        parser.add_argument('file', nargs='?', help='The test file', default=default_tests_path)
 
         parser.add_argument('--performanceMonitorInterval',
                             nargs=1,
@@ -327,6 +328,7 @@ class PerftestExecCli:
                                    skip_download=args.skipDownload)
 
         perftest.collect(f"runs/{session_id}/", tags)
+
 
 class PerftestTerminateCli:
 
