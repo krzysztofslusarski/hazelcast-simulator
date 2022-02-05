@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import argparse
 import os
 import statistics
 import subprocess
@@ -45,7 +46,7 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, cps=None, aps=None):
+def plot(ts, cps=None, aps=None, ymin=0):
     if cps and aps:
         plt.title(f"Changepoints and anomalies: {ts.name}")
     elif cps:
@@ -71,6 +72,11 @@ def plot(ts, cps=None, aps=None):
         plt.plot(x, y, 'ro', color='red', label='negative anomalies')
 
     plt.legend()
+
+    if ymin == 0:
+        plt.ylim(ymin=0)
+    elif ymin:
+        plt.ylim(ymin=ymin)
     plt.show()
 
 
@@ -128,12 +134,14 @@ def anomaly_detection(ts, m=40, n=4):
 
 
 class AnomalyPoint:
+
     def __init__(self, index, direction):
         self.index = index
         self.direction = direction
 
 
 class ChangePoint:
+
     def __init__(self, index, direction):
         self.index = index
         self.direction = direction
@@ -146,6 +154,8 @@ def load_timeseries(dir, repo):
     y_list = []
     x_list = []
 
+    metric_name = '90%(us)'
+
     for commit in ordered_commits:
         commit_dir = f"{dir}/{commit}"
         min_throughput = None
@@ -156,9 +166,7 @@ def load_timeseries(dir, repo):
                 perf_data = load_yaml_file(yaml_file)
                 for test, map in perf_data.items():
                     measurements = map['measurements']
-                    commit = map['tags']['commit']
-                    print(commit)
-                    throughput = float(measurements['throughput'])
+                    throughput = float(measurements[metric_name])
                     if not min_throughput:
                         min_throughput = throughput
                     else:
@@ -171,7 +179,7 @@ def load_timeseries(dir, repo):
 
     y = np.array(y_list, dtype=float)
     x = np.arange(0, len(y))
-    return TimeSeries(x, y, x_label="Date", y_label="Throughput", name="Throughput")
+    return TimeSeries(x, y, x_label="Commit", y_label=metric_name, name=metric_name)
 
 
 def changepoint_detection(ts):
@@ -182,12 +190,44 @@ def changepoint_detection(ts):
     return result
 
 
-# We need to determine if the time series has 'positive' or 'negative'
+class PerfAnalysisCli:
 
-dir = "/home/eng/Hazelcast/perf-regression/2c1m/runs/readonly"
-repo = "/home/eng/Hazelcast/perf-regression/2c1m/hazelcast"
-ts = load_timeseries(dir, repo)  # .newest(50)
-print(f"length timeseries {len(ts)}")
-cps = changepoint_detection(ts)
-aps = anomaly_detection(ts, n=4)
-plot(ts, cps=cps, aps=aps)
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='Does performance analysis')
+        parser.add_argument("dir", help="The directory containing the commit hashes", nargs=1)
+        parser.add_argument("-r", "--repo", help="The directory containing the git repo", nargs=1,
+                            default=['hazelcast'])
+        parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
+        parser.add_argument("-z", "--zero", help="Plot from zero", action='store_true')
+        parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
+
+        args = parser.parse_args()
+        dir = args.dir[0]
+        repo = args.repo[0]
+        latest = args.latest[0]
+        if not os.path.isdir(dir):
+            print(f"Directory [{dir}] does not exist")
+            exit(1)
+
+        if not os.path.isdir(repo):
+            print(f"Repo directory [{repo}] does not exist")
+            exit(1)
+
+        # We need to determine if the time series has 'positive' or 'negative'
+
+        ts = load_timeseries(dir, repo)
+
+        if latest:
+            print(f"Taking the last {latest} items of timeseries with {len(ts)} items")
+            ts = ts.newest(latest)
+
+        print(f"length timeseries {len(ts)}")
+        cps = changepoint_detection(ts)
+        aps = anomaly_detection(ts, n=4)
+
+        ymin = 0 if args.zero else None
+        plot(ts, cps=cps, aps=aps, ymin=ymin)
+
+
+if __name__ == '__main__':
+    PerfAnalysisCli()
