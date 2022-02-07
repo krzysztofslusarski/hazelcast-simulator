@@ -30,6 +30,7 @@ def run(test, commit, runs, repo):
     commit_dir = f"runs/{test_name}/{commit}"
     info(f"Running {commit_dir}, runs {runs} ")
     info(f"Version:[{version}]")
+    info(f"Test Duration: {test.get('duration')}")
     for i in range(0, runs):
         dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         run_path = f"{commit_dir}/{dt}"

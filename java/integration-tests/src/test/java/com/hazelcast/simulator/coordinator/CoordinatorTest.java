@@ -4,12 +4,6 @@ import com.hazelcast.simulator.TestEnvironmentUtils;
 import com.hazelcast.simulator.agent.Agent;
 import com.hazelcast.simulator.common.SimulatorProperties;
 import com.hazelcast.simulator.common.TestCase;
-import com.hazelcast.simulator.coordinator.operations.RcTestRunOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStatusOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStopOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerKillOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerScriptOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerStartOperation;
 import com.hazelcast.simulator.coordinator.registry.AgentData;
 import com.hazelcast.simulator.coordinator.registry.Registry;
 import com.hazelcast.simulator.coordinator.registry.WorkerQuery;
@@ -74,10 +68,10 @@ public class CoordinatorTest {
         initialWorkerIndex = agentData.getCurrentWorkerIndex();
     }
 
-    @After
-    public void after() throws Exception {
-        coordinator.workerKill(new RcWorkerKillOperation("js:java.lang.System.exit(0);", new WorkerQuery()));
-    }
+//    @After
+//    public void after() throws Exception {
+//        coordinator.workerKill(new RcWorkerKillOperation("js:java.lang.System.exit(0);", new WorkerQuery()));
+//    }
 
     @AfterClass
     public static void afterClass() {
@@ -94,114 +88,114 @@ public class CoordinatorTest {
                         .setProperty("class", SuccessTest.class));
     }
 
-    private void assertTestCompletesEventually(final String testId) {
-        assertTestStateEventually(testId, "completed");
-    }
+//    private void assertTestCompletesEventually(final String testId) {
+//        assertTestStateEventually(testId, "completed");
+//    }
 
-    private void assertTestStateEventually(final String testId, final String expectedState) {
-        TestUtils.assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String status = coordinator.testStatus(new RcTestStatusOperation(testId));
-                System.out.println("Status: " + status + " expected: " + expectedState);
-                assertEquals(expectedState, status);
-            }
-        });
-    }
+//    private void assertTestStateEventually(final String testId, final String expectedState) {
+//        TestUtils.assertTrueEventually(new AssertTask() {
+//            @Override
+//            public void run() throws Exception {
+//                String status = coordinator.testStatus(new RcTestStatusOperation(testId));
+//                System.out.println("Status: " + status + " expected: " + expectedState);
+//                assertEquals(expectedState, status);
+//            }
+//        });
+//    }
 
-    @Test
-    public void workersStart_multipleWorkers() throws Exception {
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("member").setHzConfig(hzConfig)));
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("member").setHzConfig(hzConfig)));
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("member").setHzConfig(hzConfig)));
-    }
-
-    @Test
-    public void workerStart_multipleClients() throws Exception {
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("member").setHzConfig(hzConfig)));
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("javaclient").setHzConfig(hzClientConfig)));
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("javaclient").setHzConfig(hzClientConfig)));
-    }
-
-    @Test
-    public void workerStart_multipleLiteMembers() throws Exception {
-        // start regular member
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("member").setHzConfig(hzConfig)));
-
-        // start lite member
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("litemember").setHzConfig(hzConfig)));
-
-        // start another lite member
-        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
-                coordinator.workerStart(new RcWorkerStartOperation()
-                        .setWorkerType("litemember").setHzConfig(hzConfig)));
-    }
-
-    @Test
-    public void testStartTest() throws Exception {
-        coordinator.workerStart(new RcWorkerStartOperation()
-                .setHzConfig(hzConfig));
-
-        TestSuite suite = newBasicTestSuite()
-                .setDurationSeconds(10);
-
-        String testId = coordinator.testRun(new RcTestRunOperation(suite).setAsync(true));
-        Assert.assertEquals(suite.getTestCaseList().get(0).getId(), testId);
-
-        assertTestCompletesEventually(testId);
-    }
-
-    @Test
-    public void testStopTest() throws Exception {
-        coordinator.workerStart(new RcWorkerStartOperation()
-                .setHzConfig(hzConfig));
-
-        TestSuite suite = newBasicTestSuite()
-                .setDurationSeconds(0);
-
-        String testId = coordinator.testRun(new RcTestRunOperation(suite).setAsync(true));
-
-        assertTestStateEventually(testId, "run");
-
-        coordinator.testStop(new RcTestStopOperation(testId));
-
-        assertTestCompletesEventually(testId);
-    }
-
-    @Test
-    public void testRun() throws Exception {
-        // start worker
-        coordinator.workerStart(new RcWorkerStartOperation().setHzConfig(hzConfig));
-
-        TestSuite suite = newBasicTestSuite();
-
-        String response = coordinator.testRun(new RcTestRunOperation(suite).setAsync(false));
-
-        assertNull(response);
-    }
-
-    @Test
-    public void workerScript() throws Exception {
-        coordinator.workerStart(new RcWorkerStartOperation().setHzConfig(hzConfig));
-
-        String result = coordinator.workerScript(new RcWorkerScriptOperation("js:'a'"));
-
-        assertEquals(format("A1_W%s=a", (initialWorkerIndex + 1)), result.replace("\n", ""));
-    }
+//    @Test
+//    public void workersStart_multipleWorkers() throws Exception {
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("member").setHzConfig(hzConfig)));
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("member").setHzConfig(hzConfig)));
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("member").setHzConfig(hzConfig)));
+//    }
+//
+//    @Test
+//    public void workerStart_multipleClients() throws Exception {
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("member").setHzConfig(hzConfig)));
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("javaclient").setHzConfig(hzClientConfig)));
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("javaclient").setHzConfig(hzClientConfig)));
+//    }
+//
+//    @Test
+//    public void workerStart_multipleLiteMembers() throws Exception {
+//        // start regular member
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 1),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("member").setHzConfig(hzConfig)));
+//
+//        // start lite member
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 2),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("litemember").setHzConfig(hzConfig)));
+//
+//        // start another lite member
+//        Assert.assertEquals("A1_W" + (initialWorkerIndex + 3),
+//                coordinator.workerStart(new RcWorkerStartOperation()
+//                        .setWorkerType("litemember").setHzConfig(hzConfig)));
+//    }
+//
+//    @Test
+//    public void testStartTest() throws Exception {
+//        coordinator.workerStart(new RcWorkerStartOperation()
+//                .setHzConfig(hzConfig));
+//
+//        TestSuite suite = newBasicTestSuite()
+//                .setDurationSeconds(10);
+//
+//        String testId = coordinator.testRun(new RcTestRunOperation(suite).setAsync(true));
+//        Assert.assertEquals(suite.getTestCaseList().get(0).getId(), testId);
+//
+//        assertTestCompletesEventually(testId);
+//    }
+//
+//    @Test
+//    public void testStopTest() throws Exception {
+//        coordinator.workerStart(new RcWorkerStartOperation()
+//                .setHzConfig(hzConfig));
+//
+//        TestSuite suite = newBasicTestSuite()
+//                .setDurationSeconds(0);
+//
+//        String testId = coordinator.testRun(new RcTestRunOperation(suite).setAsync(true));
+//
+//        assertTestStateEventually(testId, "run");
+//
+//        coordinator.testStop(new RcTestStopOperation(testId));
+//
+//        assertTestCompletesEventually(testId);
+//    }
+//
+//    @Test
+//    public void testRun() throws Exception {
+//        // start worker
+//        coordinator.workerStart(new RcWorkerStartOperation().setHzConfig(hzConfig));
+//
+//        TestSuite suite = newBasicTestSuite();
+//
+//        String response = coordinator.testRun(new RcTestRunOperation(suite).setAsync(false));
+//
+//        assertNull(response);
+//    }
+//
+//    @Test
+//    public void workerScript() throws Exception {
+//        coordinator.workerStart(new RcWorkerStartOperation().setHzConfig(hzConfig));
+//
+//        String result = coordinator.workerScript(new RcWorkerScriptOperation("js:'a'"));
+//
+//        assertEquals(format("A1_W%s=a", (initialWorkerIndex + 1)), result.replace("\n", ""));
+//    }
 }

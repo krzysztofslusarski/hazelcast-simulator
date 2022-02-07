@@ -14,8 +14,9 @@ from simulator.log import info, warn, log_header
 
 class PerfTest:
 
-    def __init__(self, logfile=None):
+    def __init__(self, logfile=None, log_shell_command=False):
         self.logfile = logfile
+        self.log_shell_command = log_shell_command
         pass
 
     def terminate(self, inventory, workload):
@@ -134,9 +135,7 @@ class PerfTest:
                 tmp.write(f"{key}={value}\n")
             tmp.flush()
 
-            cmd = f"{simulator_home}/bin/hidden/coordinator {args} {tmp.name}"
-            info(cmd)
-            exitcode = self.__shell(cmd)
+            exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator {args} {tmp.name}")
             if exitcode != 0:
                 exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
         return run_path
@@ -180,6 +179,9 @@ class PerfTest:
             exit_with_error(f"Failed to clean, exitcode={exitcode}")
 
     def __shell(self, cmd):
+        if self.log_shell_command:
+            info(cmd)
+
         if self.logfile:
             return shell_logged(cmd, self.logfile, exit_on_error=False)
         else:
@@ -187,8 +189,6 @@ class PerfTest:
 
     def collect(self, dir, tags):
         report_dir = f"{dir}/report"
-
-        info(f"dir={dir}")
 
         if not os.path.exists(report_dir):
             self.__shell(f"perftest report  -o {report_dir} {dir}")

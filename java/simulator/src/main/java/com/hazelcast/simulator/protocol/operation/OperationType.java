@@ -19,16 +19,6 @@ import com.hazelcast.simulator.agent.operations.CreateWorkerOperation;
 import com.hazelcast.simulator.agent.operations.StartTimeoutDetectionOperation;
 import com.hazelcast.simulator.agent.operations.StopTimeoutDetectionOperation;
 import com.hazelcast.simulator.coordinator.operations.FailureOperation;
-import com.hazelcast.simulator.coordinator.operations.RcDownloadOperation;
-import com.hazelcast.simulator.coordinator.operations.RcInstallOperation;
-import com.hazelcast.simulator.coordinator.operations.RcPrintLayoutOperation;
-import com.hazelcast.simulator.coordinator.operations.RcStopCoordinatorOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestRunOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStatusOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStopOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerKillOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerScriptOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerStartOperation;
 import com.hazelcast.simulator.worker.operations.CreateTestOperation;
 import com.hazelcast.simulator.worker.operations.ExecuteScriptOperation;
 import com.hazelcast.simulator.worker.operations.PerformanceStatsOperation;
@@ -52,18 +42,6 @@ public enum OperationType {
     // Coordinator-Operations
     FAILURE(FailureOperation.class, 1000),
     PERFORMANCE_STATE(PerformanceStatsOperation.class, 1002),
-
-    // Coordinator Remote operations
-    RC_INSTALL(RcInstallOperation.class, 2000),
-    RC_EXIT(RcStopCoordinatorOperation.class, 2001),
-    RC_TEST_RUN(RcTestRunOperation.class, 2002),
-    RC_TEST_STATUS(RcTestStatusOperation.class, 2003),
-    RC_TEST_STOP(RcTestStopOperation.class, 2004),
-    RC_WORKER_KILL(RcWorkerKillOperation.class, 2005),
-    RC_WORKER_SCRIPT(RcWorkerScriptOperation.class, 2006),
-    RC_WORKER_START(RcWorkerStartOperation.class, 2007),
-    RC_PRINT_LAYOUT(RcPrintLayoutOperation.class, 2008),
-    RC_DOWNLOAD(RcDownloadOperation.class, 2009),
 
     // Agent-Operations
     CREATE_WORKER(CreateWorkerOperation.class, 3000),

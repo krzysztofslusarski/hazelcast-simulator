@@ -306,28 +306,29 @@ class PerftestExecCli:
         tags = parse_tags(args.tag)
 
         perftest = PerfTest()
-        run_path = perftest.exec(test,
-                                   run_path=args.sessionId,
-                                   performance_monitor_interval_seconds=args.performanceMonitorInterval,
-                                   worker_vm_startup_delay_ms=args.workerVmStartupDelayMs,
-                                   parallel=args.parallel,
-                                   license_key=args.licenseKey,
-                                   driver=args.driver,
-                                   version=args.version,
-                                   duration=args.duration,
-                                   members=args.members,
-                                   member_args=args.memberArgs,
-                                   client_args=args.clientArgs,
-                                   clients=args.clients,
-                                   dedicated_member_machines=args.dedicatedMemberMachines,
-                                   node_group=args.nodeGroup,
-                                   loadgenerator_group=args.loadGeneratorGroup,
-                                   fail_fast=args.failFast,
-                                   verify_enabled=args.verifyEnabled,
-                                   client_type=args.clientType,
-                                   skip_download=args.skipDownload)
+        run_path = perftest.exec(
+            test,
+            run_path=args.sessionId,
+            performance_monitor_interval_seconds=args.performanceMonitorInterval,
+            worker_vm_startup_delay_ms=args.workerVmStartupDelayMs,
+            parallel=args.parallel,
+            license_key=args.licenseKey,
+            driver=args.driver,
+            version=args.version,
+            duration=args.duration,
+            members=args.members,
+            member_args=args.memberArgs,
+            client_args=args.clientArgs,
+            clients=args.clients,
+            dedicated_member_machines=args.dedicatedMemberMachines,
+            node_group=args.nodeGroup,
+            loadgenerator_group=args.loadGeneratorGroup,
+            fail_fast=args.failFast,
+            verify_enabled=args.verifyEnabled,
+            client_type=args.clientType,
+            skip_download=args.skipDownload)
 
-        perftest.collect(f"runs/{run_path}/", tags)
+        perftest.collect(run_path, tags)
 
 
 class PerftestTerminateCli:

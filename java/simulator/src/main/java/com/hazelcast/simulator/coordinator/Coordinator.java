@@ -17,55 +17,33 @@ package com.hazelcast.simulator.coordinator;
 
 import com.hazelcast.simulator.agent.workerprocess.WorkerParameters;
 import com.hazelcast.simulator.common.SimulatorProperties;
-import com.hazelcast.simulator.coordinator.operations.RcTestRunOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStatusOperation;
-import com.hazelcast.simulator.coordinator.operations.RcTestStopOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerKillOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerScriptOperation;
-import com.hazelcast.simulator.coordinator.operations.RcWorkerStartOperation;
 import com.hazelcast.simulator.coordinator.registry.AgentData;
 import com.hazelcast.simulator.coordinator.registry.Registry;
 import com.hazelcast.simulator.coordinator.registry.TestData;
-import com.hazelcast.simulator.coordinator.registry.WorkerData;
-import com.hazelcast.simulator.coordinator.registry.WorkerQuery;
 import com.hazelcast.simulator.coordinator.tasks.AgentsDownloadTask;
-import com.hazelcast.simulator.coordinator.tasks.KillWorkersTask;
 import com.hazelcast.simulator.coordinator.tasks.PrepareRunTask;
 import com.hazelcast.simulator.coordinator.tasks.RunTestSuiteTask;
 import com.hazelcast.simulator.coordinator.tasks.StartWorkersTask;
 import com.hazelcast.simulator.coordinator.tasks.TerminateWorkersTask;
-import com.hazelcast.simulator.drivers.Driver;
 import com.hazelcast.simulator.protocol.CoordinatorClient;
 import com.hazelcast.simulator.protocol.core.SimulatorAddress;
 import com.hazelcast.simulator.utils.BashCommand;
 import com.hazelcast.simulator.utils.CommandLineExitException;
 import com.hazelcast.simulator.utils.CommonUtils;
-import com.hazelcast.simulator.worker.operations.ExecuteScriptOperation;
 import org.apache.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.File;
-import java.rmi.AlreadyBoundException;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.simulator.coordinator.AgentUtils.startAgents;
 import static com.hazelcast.simulator.coordinator.AgentUtils.stopAgents;
 import static com.hazelcast.simulator.drivers.Driver.loadDriver;
 import static com.hazelcast.simulator.utils.CommonUtils.sleepSeconds;
-import static com.hazelcast.simulator.utils.FileUtils.getConfigurationFile;
 import static com.hazelcast.simulator.utils.FileUtils.getUserDir;
-import static com.hazelcast.simulator.utils.FormatUtils.join;
 import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
-import static com.hazelcast.simulator.utils.TagUtils.matches;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
 
@@ -82,7 +60,6 @@ public class Coordinator implements Closeable {
     private final SimulatorProperties properties;
     private final int testCompletionTimeoutSeconds;
     private final CoordinatorClient client;
-    private CoordinatorRemoteImpl coordinatorRemote;
 
     public Coordinator(Registry registry, CoordinatorParameters parameters) {
         this.registry = registry;
@@ -122,21 +99,7 @@ public class Coordinator implements Closeable {
 
         installDriver(properties.getVersionSpec());
 
-        initCoordinatorRemote();
-
         log("Coordinator started...");
-    }
-
-    private void initCoordinatorRemote() throws RemoteException, AlreadyBoundException {
-        int remotePort = properties.getCoordinatorPort();
-        if (remotePort != 0) {
-            java.rmi.registry.Registry rmiRegistry = LocateRegistry.createRegistry(remotePort);
-            coordinatorRemote = new CoordinatorRemoteImpl(this);
-            Remote stub = UnicastRemoteObject.exportObject(coordinatorRemote, 0);
-
-            // Bind the remote object's stub in the registry
-            rmiRegistry.bind("CoordinatorRemote", stub);
-        }
     }
 
     private void registerShutdownHook() {
@@ -267,161 +230,6 @@ public class Coordinator implements Closeable {
 
     public String printLayout() {
         return registry.printLayout();
-    }
-
-    public String testRun(RcTestRunOperation op) {
-        LOGGER.info("Run starting...");
-        final RunTestSuiteTask runTestSuiteTask = createRunTestSuiteTask(op.getTestSuite());
-
-        if (op.isAsync()) {
-            if (op.getTestSuite().size() > 1) {
-                throw new IllegalArgumentException("1 test in testsuite allowed");
-            }
-
-            new Thread(runTestSuiteTask::run).start();
-
-            for (; ; ) {
-                sleepSeconds(1);
-                for (TestData test : registry.getTests()) {
-                    if (test.getTestSuite() == op.getTestSuite()) {
-                        return test.getTestCase().getId();
-                    }
-                }
-            }
-        } else {
-            boolean success = runTestSuiteTask.run();
-            LOGGER.info("Run complete!");
-            return success ? null : "Run completed with failures!";
-        }
-    }
-
-    public String testStop(RcTestStopOperation op) throws Exception {
-        LOGGER.info(format("Test [%s] stopping...", op.getTestId()));
-
-        TestData test = registry.getTest(op.getTestId());
-        if (test == null) {
-            throw new IllegalStateException(format("no test with id [%s] found", op.getTestId()));
-        }
-
-        for (int i = 0; i < testCompletionTimeoutSeconds; i++) {
-            test.setStopRequested(true);
-
-            sleepSeconds(1);
-
-            if (test.isCompleted()) {
-                return test.getStatusString();
-            }
-        }
-
-        throw new Exception("Test failed to stop within " + testCompletionTimeoutSeconds
-                + " seconds, current status: " + test.getStatusString());
-    }
-
-    public String testStatus(RcTestStatusOperation op) {
-        TestData test = registry.getTest(op.getTestId());
-        return test == null ? "null" : test.getStatusString();
-    }
-
-    public String workerStart(RcWorkerStartOperation op) throws Exception {
-        // todo: tags
-        String workerType = op.getWorkerType();
-
-        LOGGER.info("Starting " + op.getCount() + " [" + workerType + "] workers...");
-
-        Driver driver = loadDriver(properties.get("DRIVER"))
-                .setAgents(registry.getAgents())
-                .setAll(properties.asMap())
-                .set("CLIENT_ARGS", op.getVmOptions())
-                .set("MEMBER_ARGS", op.getVmOptions())
-                .set("RUN_ID", parameters.getRunId())
-                .setIfNotNull("VERSION_SPEC", op.getVersionSpec())
-                .setIfNotNull("CONFIG", op.getConfig());
-
-        List<AgentData> agents = findAgents(op);
-        if (agents.isEmpty()) {
-            throw new IllegalStateException("No suitable agents found");
-        }
-
-        LOGGER.info("Suitable agents: " + agents);
-
-        DeploymentPlan deploymentPlan = new DeploymentPlan(driver, agents)
-                .addToPlan(op.getCount(), workerType);
-
-        List<WorkerData> workers = createStartWorkersTask(deploymentPlan.getWorkerDeployment(), op.getTags()).run();
-        LOGGER.info("Workers started!");
-        return WorkerData.toAddressString(workers);
-    }
-
-    private List<AgentData> findAgents(RcWorkerStartOperation op) {
-        List<AgentData> agents = new ArrayList<>(registry.getAgents());
-        List<AgentData> result = new ArrayList<>();
-        for (AgentData agent : agents) {
-            List<String> expectedAgentAddresses = op.getAgentAddresses();
-
-            if (expectedAgentAddresses != null) {
-                if (!expectedAgentAddresses.contains(agent.getAddress().toString())) {
-                    continue;
-                }
-            }
-
-            Map<String, String> expectedAgentTags = op.getAgentTags();
-            if (expectedAgentTags != null) {
-                if (!matches(op.getAgentTags(), agent.getTags())) {
-                    continue;
-                }
-            }
-
-            result.add(agent);
-        }
-        return result;
-    }
-
-    public String workerKill(RcWorkerKillOperation op) throws Exception {
-        WorkerQuery workerQuery = op.getWorkerQuery();
-
-        LOGGER.info(format("Killing %s...", workerQuery));
-
-        List<WorkerData> result = new KillWorkersTask(
-                registry,
-                client,
-                op.getCommand(),
-                workerQuery,
-                properties.getInt("WAIT_FOR_WORKER_SHUTDOWN_TIMEOUT_SECONDS")
-        ).run();
-
-        LOGGER.info("\n" + registry.printLayout());
-
-        LOGGER.info(format("Killing %s complete", workerQuery));
-
-        return WorkerData.toAddressString(result);
-    }
-
-    public String workerScript(RcWorkerScriptOperation operation) throws Exception {
-        List<WorkerData> workers = operation.getWorkerQuery().execute(registry.getWorkers());
-
-        LOGGER.info(format("Script [%s] on %s workers ...", operation.getCommand(), workers.size()));
-
-        Map<WorkerData, Future<String>> futures = new HashMap<>();
-        for (WorkerData worker : workers) {
-            Future<String> f = client.submit(worker.getAddress(),
-                    new ExecuteScriptOperation(operation.getCommand(), operation.isFireAndForget()));
-            futures.put(worker, f);
-            LOGGER.info("Script send to worker [" + worker.getAddress() + "]");
-        }
-
-        if (operation.isFireAndForget()) {
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<WorkerData, Future<String>> entry : futures.entrySet()) {
-            WorkerData worker = entry.getKey();
-            String result = entry.getValue().get();
-            sb.append(worker.getAddress()).append("=").append(result).append("\n");
-        }
-
-        LOGGER.info(format("Script [%s] on %s workers completed!", operation.getCommand(), workers.size()));
-        return sb.toString();
     }
 
     StartWorkersTask createStartWorkersTask(Map<SimulatorAddress, List<WorkerParameters>> deploymentPlan,
