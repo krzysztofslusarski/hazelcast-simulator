@@ -12,7 +12,6 @@ import yaml
 from simulator.log import Level, error, log
 
 module_dir = os.path.dirname(pkg_resources.resource_filename(__name__, '__init__.py'))
-simulator_version = "0.14-SNAPSHOT"
 simulator_home = os.environ.get('SIMULATOR_HOME')
 bin_dir = os.path.join(simulator_home, "bin")
 
@@ -49,7 +48,10 @@ def validate_git_repo(path):
 
     return path
 
+
 def validate_dir(path):
+    path = os.path.expanduser(path)
+
     if not os.path.exists(path):
         print(f"Directory [{path}] does not exist")
         exit(1)
@@ -60,10 +62,19 @@ def validate_dir(path):
 
     return path
 
+
 def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+    path = os.path.expanduser(path)
+
+    if os.path.isdir(path):
+        return path
+
+    if os.path.exists(path):
+        exit_with_error(f"Can't create directory [{path}], file with the same name already exists.")
+
+    os.makedirs(path)
     return path
+
 
 def dump(obj):
     for attr in dir(obj):
@@ -116,9 +127,9 @@ class Worker(Thread):
     def __init__(self, target, args):
         super().__init__(target=target, args=args)
         self.future = Future()
+        self.exception = None
 
     def run(self):
-        self.exception = None
         try:
             super().run()
             self.future.complete(True)

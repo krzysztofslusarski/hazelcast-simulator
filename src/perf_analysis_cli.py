@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
-from simulator.util import load_yaml_file, validate_git_repo, validate_dir, exit_with_error
+from simulator.util import load_yaml_file, validate_git_repo, validate_dir, exit_with_error, mkdir
 
 
 class TimeSeries:
@@ -26,6 +26,7 @@ class TimeSeries:
         self.y_label = y_label
         self.name = name
         self.increase_is_positive = increase_is_positive
+        self.fake_x = np.arange(0, len(y))
 
     # Creates a new TimeSeries containing the newest n items.
     def newest(self, n):
@@ -43,7 +44,7 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, filename, cps=None, aps=None, ymin=0, ):
+def plot(ts, filename, cps=None, aps=None, ymin=0):
     if cps and aps:
         plt.title(f"Changepoints and anomalies: {ts.name}")
     elif cps:
@@ -59,51 +60,29 @@ def plot(ts, filename, cps=None, aps=None, ymin=0, ):
     plt.grid()
     plt.xlabel(ts.x_label)
     plt.ylabel(ts.y_label)
-    plt.plot(ts.x, ts.y, color="orange")
+    plt.plot(ts.fake_x, ts.y, color="orange")
 
     if cps:
         for p in cps:
-            plt.plot(ts.x[p.index], ts.y[p.index], 'ro', color="blue")
+            x = ts.fake_x[p.index]
+            y = ts.y[p.index]
+            commit = ts.x[p.index]
+            plt.plot(x, y, 'o', color="green", label=f"cp: {commit}")
 
     if aps:
-        x, y = collect_anomalies(ts, aps, direction=Change.POSITIVE)
-        plt.plot(x, y, 'ro', color='green', label='positive anomalies')
-
-        x, y = collect_anomalies(ts, aps, direction=Change.NEGATIVE)
-        plt.plot(x, y, 'ro', color='red', label='negative anomalies')
+        for p in aps:
+            x = ts.fake_x[p.index]
+            y = ts.y[p.index]
+            commit = ts.x[p.index]
+            if p.direction == Change.POSITIVE:
+                plt.plot(x, y, 'o', color="green", label=f"pa: {commit}")
+            else:
+                plt.plot(x, y, 'o', color="red", label=f"na: {commit}")
 
     plt.legend()
-
-    if ymin == 0:
-        plt.ylim(ymin=0)
-    elif ymin:
-        plt.ylim(ymin=ymin)
+    plt.ylim(ymin=ymin)
     plt.subplots_adjust(bottom=0.4)
     plt.savefig(filename)
-
-
-def collect_anomalies(ts, aps, direction):
-    x = []
-    y = []
-    if not aps:
-        return x, y
-    for p in aps:
-        if direction == p.direction:
-            x.append(ts.x[p.index])
-            y.append(ts.y[p.index])
-    return x, y
-
-
-def collect_changepoints(ts, cps, direction):
-    x = []
-    y = []
-    if not cps:
-        return x, y
-    for p in cps:
-        if direction == p.direction:
-            x.append(ts.x[p.index])
-            y.append(ts.y[p.index])
-    return x, y
 
 
 class Change(Enum):
@@ -230,6 +209,8 @@ def changepoint_detection(ts):
 class PerfAnalysisCli:
 
     def __init__(self):
+        os.path.expanduser('~/your_directory')
+
         parser = argparse.ArgumentParser(description='Does performance analysis')
         parser.add_argument("dir", help="The directory containing the commit hashes", nargs=1)
         parser.add_argument("-r", "--repo", help="The directory containing the git repo", nargs=1,
@@ -237,11 +218,14 @@ class PerfAnalysisCli:
         parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
         parser.add_argument("-z", "--zero", help="Plot from zero", action='store_true')
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
+        parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
 
         args = parser.parse_args()
         repo = validate_git_repo(args.repo[0])
         latest = args.latest[0]
         dir = validate_dir(args.dir[0])
+        output = mkdir(args.output[0])
+
         # We need to determine if the time series has 'positive' or 'negative'
 
         result = load_timeseries(dir, repo)
@@ -256,8 +240,9 @@ class PerfAnalysisCli:
 
             ymin = 0 if args.zero else None
 
-            filename = f"/home/pveentjer/tmp/{metric}.png"
-            plot(ts, filename, cps=cps, aps=aps, ymin=ymin )
+            filename = f"{output}/{metric}.png"
+            print(filename)
+            plot(ts, filename, cps=cps, aps=aps, ymin=ymin)
 
 
 if __name__ == '__main__':

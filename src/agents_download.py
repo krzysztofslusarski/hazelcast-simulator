@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import yaml
 import sys
-from simulator.util import shell, run_parallel,simulator_version
+from simulator.util import shell, run_parallel
 from simulator.hosts import public_ip, ssh_user, ssh_options
 
 
@@ -14,9 +14,9 @@ def __agent_download(agent):
     print(f"[INFO]     {public_ip(agent)} Download")
 
     if "session_id" == "*":
-        download_path = f"hazelcast-simulator-{simulator_version}/workers/"
+        download_path = f"hazelcast-simulator/workers/"
     else:
-        download_path = f"hazelcast-simulator-{simulator_version}/workers/{session_id}"
+        download_path = f"hazelcast-simulator/workers/{session_id}"
 
     # copy the files
     # we exclude the uploads directory because it could be very big e.g jars

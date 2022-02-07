@@ -21,10 +21,12 @@ public_ips=$3
 
 prepare()
 {
+     echo "[INFO]    Prepare $version_spec "
+
      if  [[ ${version_spec} == maven* ]] ; then
         maven_version=${version_spec#*=}
 
-        echo "Maven using $maven_version"
+        echo "[INFO] Maven using $maven_version"
 
         snapshot_repo="https://oss.sonatype.org/content/repositories/snapshots"
         release_repo="https://oss.sonatype.org/content/repositories/releases"

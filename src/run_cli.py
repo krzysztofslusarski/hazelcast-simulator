@@ -17,7 +17,7 @@ def bash(cmd, exit_on_error=True):
         if result.returncode != 0 and exit_on_error:
             print(f"Failed to run [{cmd}], exitcode: {result.returncode}. Check {log} for details.")
             exit(1)
-        return  result.returncode
+        return result.returncode
 
 
 def now_seconds():
@@ -41,7 +41,7 @@ def run(testname, commit, runs, repo):
     for i in range(0, runs):
         dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         session_id = f"{commit_dir}/{dt}"
-        print(f"{i+1} {session_id}")
+        print(f"{i + 1} {session_id}")
 
         bash(f"""
             $SIMULATOR_HOME/bin/hidden/coordinator     \
@@ -70,12 +70,14 @@ def build(commit, repo):
         set -e
         cd {repo}
         git pull origin master
-        git checkout {commit}         
+        git checkout {commit}
         mvn clean install -DskipTests -Dquick
     """, exit_on_error=False)
     return exitcode == 0
 
+
 class RunCli:
+
     def __init__(self):
         parser = argparse.ArgumentParser(description='Runs benchmarks')
         parser.add_argument("commits", nargs="+", help="The commits to build")
@@ -88,8 +90,11 @@ class RunCli:
         count = args.count
         repo = validate_git_repo(args.repo[0])
 
+        print(f"Number of commits {len(commits)}")
+
         start = now_seconds()
-        for commit in commits:
+        for commitIndex, commit in enumerate(commits):
+            start_test = now_seconds()
             test = "readonly"
             result_count = 0
             for p in Path(f"runs/{test}/{commit}").rglob('results.yaml'):
@@ -101,14 +106,16 @@ class RunCli:
                 continue
 
             print("--------------------------------------------------------")
+            print(f"Commit {commitIndex+1}/{len(commits)}")
             print(f"Building {commit}")
             if not build(commit, repo):
                 print("Build failed, skipping runs.")
                 continue
             run(test, commit, remaining, repo)
+            print(f"Testing {test} took {now_seconds() - start_test}s")
 
         duration = now_seconds() - start
-        print(f"Duration: {duration} s")
+        print(f"Duration: {duration}s")
 
     # run('writeonly', commit, 3)
 

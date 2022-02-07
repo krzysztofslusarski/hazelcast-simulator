@@ -1,4 +1,4 @@
 #!/bin/bash
 
 BINPATH=`dirname $0`
-python "$BINPATH/../src/commit_picker_cli.py" $@
+python "$BINPATH/../src/commit_sampler_cli.py" $@

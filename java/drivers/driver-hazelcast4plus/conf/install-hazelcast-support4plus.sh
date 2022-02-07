@@ -39,6 +39,7 @@ function real_path {
 simulator_basename=$(real_path ${SIMULATOR_HOME} | xargs basename)
 
 prepare_using_maven() {
+    echo "[INFO] Prepare using maven"
     artifact_id=$1      # the artifact_id
     version=$2          # the version of the artifact, e.g. 3.9-SNAPSHOT
     release_repo=$3     # the repo containing the releases
@@ -60,12 +61,14 @@ prepare_using_maven() {
 
     # we first have a look at the local Maven repository, so it's easy to provide a custom built version
     if [[ "${SKIP_LOCAL_MAVEN_REPO_LOOKUP}" == "false" ]] ; then
-        echo "Searching for $hazelcast_jar in local Maven repo ($local_repository_path)"
+        echo "[INFO] Searching for $hazelcast_jar in local Maven repo ($local_repository_path)"
         if [[ -f "${hazelcast_jar}" ]] ; then
-            echo "Found $hazelcast_jar in local Maven repo, copying to $destination"
+            echo "[INFO] Found $hazelcast_jar in local Maven repo, copying to $destination"
             cp ${hazelcast_jar} ${destination}
             return
         fi
+    else
+        echo "[INFO] Other branch ---------"
     fi
 
     # the artifact is not found in the local repo, so we need to download it
@@ -74,7 +77,7 @@ prepare_using_maven() {
     cp -r ${SIMULATOR_HOME}/conf/mvnw/.mvn .
     cp ${SIMULATOR_HOME}/conf/dependency-copy.xml pom.xml
 
-    # For the '.bak', see: https://stackoverflow.com/a/22084103/1514241
+    # For the '.Nbak', see: https://stackoverflow.com/a/22084103/1514241
     sed -i.bak "s|@hz-repo-release|${release_repo}|" pom.xml
     sed -i.bak "s|@hz-repo-snapshot|${snapshot_repo}|" pom.xml
     sed -i.bak "s|@hz-artifact|${artifact_id}|" pom.xml
@@ -181,6 +184,7 @@ upload_to_single_agent() {
     remote_hz_lib=${simulator_basename}/driver-lib
 
     echo "Uploading Hazelcast $local_install_dir to $public_ip:$remote_hz_lib"
+    ssh ${SSH_OPTIONS} ${user}@${public_ip} "rm -fr $remote_hz_lib"
     ssh ${SSH_OPTIONS} ${user}@${public_ip} "mkdir -p $remote_hz_lib"
 
     # in the local_install_dir multiple directories could be created e.g. git=master, maven=3.8. Each of these

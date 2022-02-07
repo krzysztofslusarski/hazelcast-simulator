@@ -2,7 +2,7 @@
 
 import yaml
 import sys
-from simulator.util import run_parallel,bin_dir,simulator_version
+from simulator.util import run_parallel,bin_dir
 from simulator.hosts import public_ip, ssh_user, ssh_options
 from simulator.ssh import SSH
 
@@ -13,7 +13,7 @@ def __start_agent(agent):
     ssh.exec("rm -fr agent_start")
     ssh.scp_to_remote(f"{bin_dir}/hidden/agent_start", ".")
     ssh.exec(
-        f"./agent_start {agent['agent_index']} {public_ip(agent)} {agent['agent_port']} {simulator_version}")
+        f"./agent_start {agent['agent_index']} {public_ip(agent)} {agent['agent_port']}")
 
 #def __verify_installation(agent):
 #    print(f"[INFO]     {public_ip(agent)} starting")

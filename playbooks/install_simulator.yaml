@@ -3,8 +3,7 @@
 
   vars:
     - simulator_home:
-    - simulator_version: 0.14-SNAPSHOT
-    - simulator_dir: ~{{ console_user | default(ansible_user) }}/hazelcast-simulator-{{ simulator_version }}
+    - simulator_dir: ~{{ console_user | default(ansible_user) }}/hazelcast-simulator
   tasks:
 
   - name: Delete simulator directory

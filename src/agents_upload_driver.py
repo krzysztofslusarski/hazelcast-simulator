@@ -2,14 +2,14 @@
 
 import yaml
 import sys
-from simulator.util import shell, run_parallel, simulator_home, simulator_version
+from simulator.util import shell, run_parallel, simulator_home
 from simulator.hosts import public_ip, ssh_user, ssh_options
 
 
 def __upload_driver(agent):
     print(f"[INFO]     {public_ip(agent)}  Uploading")
     shell(
-        f"""rsync --checksum -avv -L -e "ssh {ssh_options(agent)}" {simulator_home}/{driver_dir}/* {ssh_user(agent)}@{public_ip(agent)}:hazelcast-simulator-{simulator_version}/{driver_dir}/""")
+        f"""rsync --checksum -avv -L -e "ssh {ssh_options(agent)}" {simulator_home}/{driver_dir}/* {ssh_user(agent)}@{public_ip(agent)}:hazelcast-simulator/{driver_dir}/""")
     print(f"[INFO]     {public_ip(agent)}  Uploading: done")
 
 

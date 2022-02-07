@@ -4,7 +4,7 @@ import argparse
 from os import path
 
 from simulator.inventory_terraform import terraform_import, terraform_destroy, terraform_apply
-from simulator.util import load_yaml_file, exit_with_error, simulator_home, shell, simulator_version
+from simulator.util import load_yaml_file, exit_with_error, simulator_home, shell
 from simulator.log import info, log_header
 from simulator.ssh import new_key
 
@@ -186,7 +186,7 @@ class InventoryInstallCli:
 
         log_header("Installing Simulator")
         info(f"hosts={hosts}")
-        cmd = f"ansible-playbook --limit {hosts} --inventory inventory.yaml {simulator_home}/playbooks/install_simulator.yaml -e simulator_home='{simulator_home}' -e simulator_version='{simulator_version}'"
+        cmd = f"ansible-playbook --limit {hosts} --inventory inventory.yaml {simulator_home}/playbooks/install_simulator.yaml -e simulator_home='{simulator_home}'"
         info(cmd)
         exitcode = shell(cmd)
         if exitcode != 0:
