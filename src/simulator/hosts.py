@@ -17,3 +17,12 @@ def public_ip(host):
     if not public_ip:
         raise Exception(f"Could not find public_ip in {host}")
     return public_ip
+
+
+def agent_index(host):
+    agent_index = host.get("agent_index")
+    if not agent_index:
+        raise Exception(f"Could not find agent_index in {host}")
+    return agent_index
+
+

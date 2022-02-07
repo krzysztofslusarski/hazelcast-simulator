@@ -40,7 +40,7 @@ public class AgentsClearTask {
         long started = System.nanoTime();
 
         new BashCommand(locatePythonFile("agents_clear.py"))
-                .addParams(AgentData.hostsYaml(registry))
+                .addParams(AgentData.toYaml(registry))
                 .execute();
 
         long elapsed = getElapsedSeconds(started);

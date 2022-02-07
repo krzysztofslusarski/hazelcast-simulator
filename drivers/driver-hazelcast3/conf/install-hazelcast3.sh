@@ -15,7 +15,7 @@
 
 . ${SIMULATOR_HOME}/drivers/driver-hazelcast3/conf/install-hazelcast-support3.sh
 
-session_id=$1
+run_id=$1
 version_spec=$2
 public_ips=$3
 

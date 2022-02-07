@@ -23,9 +23,7 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.util.Map;
 
-import static com.hazelcast.simulator.utils.FileUtils.getConfigurationFile;
 import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
-import static com.hazelcast.simulator.utils.FormatUtils.join;
 
 /**
  * Downloads and post-processes the artifacts from either local or remote machine
@@ -37,21 +35,21 @@ public class AgentsDownloadTask {
 
     private final Registry registry;
     private final Map<String, String> simulatorProperties;
-    private final File rootDir;
-    private final String sessionId;
+    private final File runPath;
+    private final String runId;
 
     public AgentsDownloadTask(Registry registry,
                               Map<String, String> simulatorProperties,
-                              File rootDir,
-                              String sessionId) {
+                              File runPath,
+                              String runId) {
         this.registry = registry;
         this.simulatorProperties = simulatorProperties;
-        this.rootDir = rootDir;
-        this.sessionId = sessionId;
+        this.runPath = runPath;
+        this.runId = runId;
     }
 
     public void run() {
-        LOGGER.info("Downloading sessions [" + sessionId + "]");
+        LOGGER.info("Downloading [" + runId + "]");
 
         // setThrowsException(true), which causes to throw and exception rather than
         // calling System.exit(), is set on purpose. DownloadTask is run in the shutdown hook mechanism.
@@ -59,7 +57,7 @@ public class AgentsDownloadTask {
         new BashCommand(locatePythonFile("agents_download.py"))
                 .ensureJavaOnPath()
                 .addEnvironment(simulatorProperties)
-                .addParams(rootDir.getAbsolutePath(), sessionId, AgentData.hostsYaml(registry))
+                .addParams(runPath, runId, AgentData.toYaml(registry))
                 .setThrowsException(true)
                 .execute();
 

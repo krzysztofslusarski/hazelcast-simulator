@@ -18,7 +18,7 @@ package com.hazelcast.simulator.coordinator;
 import com.hazelcast.simulator.coordinator.registry.Registry;
 import com.hazelcast.simulator.utils.BashCommand;
 
-import static com.hazelcast.simulator.coordinator.registry.AgentData.hostsYaml;
+import static com.hazelcast.simulator.coordinator.registry.AgentData.toYaml;
 import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 
 public final class AgentUtils {
@@ -28,19 +28,19 @@ public final class AgentUtils {
 
     public static void pingAgents(Registry registry) {
         new BashCommand(locatePythonFile("agents_ping.py"))
-                .addParams(hostsYaml(registry))
+                .addParams(toYaml(registry))
                 .execute();
     }
 
     public static void startAgents(Registry registry) {
         new BashCommand(locatePythonFile("agents_start.py"))
-                .addParams(hostsYaml(registry))
+                .addParams(toYaml(registry))
                 .execute();
     }
 
     public static void stopAgents(Registry registry) {
         new BashCommand(locatePythonFile("agents_stop.py"))
-                .addParams(hostsYaml(registry))
+                .addParams(toYaml(registry))
                 .execute();
     }
 }

@@ -217,7 +217,7 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
         LOGGER.info("Installing '" + driver + "' version '" + versionSpec + "' on Agents using " + installFile);
 
         new BashCommand(installFile)
-                .addParams(get("SESSION_ID"), versionSpec, publicIps)
+                .addParams(get("RUN_ID"), versionSpec, publicIps)
                 .addEnvironment(properties)
                 .execute();
 

@@ -202,11 +202,11 @@ public class AgentData {
         return publicAddressesString(registry.getAgents());
     }
 
-    public static String hostsYaml(Registry registry) {
-       return hostsYaml(registry.getAgents());
+    public static String toYaml(Registry registry) {
+       return toYaml(registry.getAgents());
     }
 
-    public static String hostsYaml(List<AgentData> a) {
+    public static String toYaml(List<AgentData> a) {
         List agents = new ArrayList<>();
         for(AgentData agentData: a){
             Map<String,String> agent = new HashMap<>();

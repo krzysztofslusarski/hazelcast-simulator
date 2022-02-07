@@ -15,6 +15,7 @@
  */
 package com.hazelcast.simulator.coordinator.tasks;
 
+import com.hazelcast.simulator.coordinator.registry.AgentData;
 import com.hazelcast.simulator.utils.BashCommand;
 
 import java.io.File;
@@ -22,37 +23,37 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.simulator.utils.FileUtils.getConfigurationFile;
+import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 import static com.hazelcast.simulator.utils.FormatUtils.join;
 
 /**
- * Prepares the session on the remote machines.
+ * Prepares the run on the remote machines.
  *
- * This includes creating the session directory, uploading the 'uploads' directory.
+ * This includes creating the run directory, uploading the 'uploads' directory.
  *
- * The real work is done by the 'prepare_session.sh' script.
+ * The real work is done by the 'prepare_run.py' script.
  */
-public class PrepareSessionTask {
-    private final List<String> agents;
+public class PrepareRunTask {
+    private final List<AgentData> agents;
     private final Map<String, String> simulatorProperties;
     private final File uploadDir;
-    private final String sessionId;
+    private final String runId;
 
-    public PrepareSessionTask(List<String> agents,
-                              Map<String, String> simulatorProperties,
-                              File uploadDir,
-                              String sessionId) {
+    public PrepareRunTask(List<AgentData> agents,
+                          Map<String, String> simulatorProperties,
+                          File uploadDir,
+                          String runId) {
         this.agents = agents;
         this.simulatorProperties = simulatorProperties;
         this.uploadDir = uploadDir;
-        this.sessionId = sessionId;
+        this.runId = runId;
     }
 
     public void run() {
-        String installFile = getConfigurationFile("prepare_session.sh").getAbsolutePath();
-        String agentIps = join(agents, ",");
+        String installFile = locatePythonFile("prepare_run.py");
         new BashCommand(installFile)
                 .addEnvironment(simulatorProperties)
-                .addParams(uploadDir.getAbsolutePath(), sessionId, agentIps)
+                .addParams(uploadDir.getAbsolutePath(), runId, AgentData.toYaml(agents))
                 .execute();
 
     }

@@ -8,13 +8,14 @@ import yaml
 import csv
 from simulator.hosts import public_ip, ssh_user, ssh_options
 from simulator.ssh import SSH
-from simulator.util import read, write, shell, run_parallel, bin_dir, exit_with_error, simulator_home
+from simulator.util import read, write, shell, run_parallel, bin_dir, exit_with_error, simulator_home, shell_logged
 from simulator.log import info, warn, log_header
 
 
 class PerfTest:
 
-    def __init__(self):
+    def __init__(self, logfile=None):
+        self.logfile = logfile
         pass
 
     def terminate(self, inventory, workload):
@@ -47,10 +48,10 @@ class PerfTest:
 
     def exec(self,
              test,
-             session_id=None,
+             run_path=None,
              performance_monitor_interval_seconds=None,
              worker_vm_startup_delay_ms=None,
-             dedicated_member_machines = None,
+             dedicated_member_machines=None,
              parallel=None,
              license_key=None,
              skip_download=None,
@@ -86,8 +87,8 @@ class PerfTest:
         if skip_download:
             args = f"{args} --skipDownload {skip_download}"
 
-        if session_id:
-            args = f"{args} --sessionId {session_id}"
+        if run_path:
+            args = f"{args} --runPath {run_path}"
 
         if duration:
             args = f"{args} --duration {duration}"
@@ -105,13 +106,13 @@ class PerfTest:
             args = f"{args} --members {members}"
 
         if member_args:
-            args = f"{args} --memberArgs {member_args}"
+            args = f"""{args} --memberArgs "{member_args}" """
 
         if clients:
             args = f"{args} --clients {clients}"
 
         if client_args:
-            args = f"{args} --clientArgs {client_args}"
+            args = f"""{args} --clientArgs "{client_args}" """
 
         if client_type:
             args = f"{args} --clientType {client_type}"
@@ -135,26 +136,28 @@ class PerfTest:
 
             cmd = f"{simulator_home}/bin/hidden/coordinator {args} {tmp.name}"
             info(cmd)
-            exitcode = shell(cmd, use_print=True)
+            exitcode = self.__shell(cmd)
             if exitcode != 0:
                 exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
-        return session_id
+        return run_path
 
     def run(self, tests, tags):
         for test in tests:
             repetitions = test['repetitions']
             for i in range(0, repetitions):
-                session_id = self.__run_test(test)
-                self.collect(f"runs/{session_id}", tags)
+                run_path = self.run_test(test)
+                self.collect(run_path, tags)
         return
 
-    def __run_test(self, test):
-        dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-        name = test['name']
-        session_id = f"{name}/{dt}"
+    def run_test(self, test, run_path=None):
+        if not run_path:
+            dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+            name = test['name']
+            run_path = f"runs/{name}/{dt}"
+
         self.exec(
             test['test'],
-            session_id=session_id,
+            run_path=run_path,
             duration=test.get('duration'),
             performance_monitor_interval_seconds=test.get('performance_monitor_interval_seconds'),
             node_group=test.get('node_group'),
@@ -169,12 +172,18 @@ class PerfTest:
             verify_enabled=test.get('verify_enabled'),
             client_type=test.get('client_type'))
 
-        return session_id
+        return run_path
 
     def clean(self):
-        exitcode = shell(f"{simulator_home}/bin/hidden/coordinator --clean", use_print=True)
+        exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator --clean")
         if exitcode != 0:
             exit_with_error(f"Failed to clean, exitcode={exitcode}")
+
+    def __shell(self, cmd):
+        if self.logfile:
+            return shell_logged(cmd, self.logfile, exit_on_error=False)
+        else:
+            return shell(cmd, use_print=True)
 
     def collect(self, dir, tags):
         report_dir = f"{dir}/report"
@@ -182,7 +191,7 @@ class PerfTest:
         info(f"dir={dir}")
 
         if not os.path.exists(report_dir):
-            shell(f"perftest report  -o {report_dir} {dir}")
+            self.__shell(f"perftest report  -o {report_dir} {dir}")
 
         csv_path = f"{report_dir}/report.csv"
         if not os.path.exists(csv_path):

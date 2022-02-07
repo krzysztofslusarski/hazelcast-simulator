@@ -15,18 +15,16 @@
 
 . ${SIMULATOR_HOME}/drivers/driver-hazelcast4plus/conf/install-hazelcast-support4plus.sh
 
-session_id=$1
+run_id=$1
 version_spec=$2
 public_ips=$3
 
 prepare()
 {
-     echo "[INFO]    Prepare $version_spec "
-
      if  [[ ${version_spec} == maven* ]] ; then
         maven_version=${version_spec#*=}
 
-        echo "[INFO] Maven using $maven_version"
+        echo "Maven using $maven_version"
 
         snapshot_repo="https://oss.sonatype.org/content/repositories/snapshots"
         release_repo="https://oss.sonatype.org/content/repositories/releases"

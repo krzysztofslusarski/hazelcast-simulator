@@ -30,7 +30,7 @@ import com.hazelcast.simulator.coordinator.registry.WorkerData;
 import com.hazelcast.simulator.coordinator.registry.WorkerQuery;
 import com.hazelcast.simulator.coordinator.tasks.AgentsDownloadTask;
 import com.hazelcast.simulator.coordinator.tasks.KillWorkersTask;
-import com.hazelcast.simulator.coordinator.tasks.PrepareSessionTask;
+import com.hazelcast.simulator.coordinator.tasks.PrepareRunTask;
 import com.hazelcast.simulator.coordinator.tasks.RunTestSuiteTask;
 import com.hazelcast.simulator.coordinator.tasks.StartWorkersTask;
 import com.hazelcast.simulator.coordinator.tasks.TerminateWorkersTask;
@@ -59,7 +59,6 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.simulator.coordinator.AgentUtils.startAgents;
 import static com.hazelcast.simulator.coordinator.AgentUtils.stopAgents;
-import static com.hazelcast.simulator.coordinator.registry.AgentData.publicAddresses;
 import static com.hazelcast.simulator.drivers.Driver.loadDriver;
 import static com.hazelcast.simulator.utils.CommonUtils.sleepSeconds;
 import static com.hazelcast.simulator.utils.FileUtils.getConfigurationFile;
@@ -88,7 +87,7 @@ public class Coordinator implements Closeable {
     public Coordinator(Registry registry, CoordinatorParameters parameters) {
         this.registry = registry;
         this.parameters = parameters;
-        this.failureCollector = new FailureCollector(parameters.getOutputDirectory(), registry);
+        this.failureCollector = new FailureCollector(parameters.getRunPath(), registry);
         this.properties = parameters.getSimulatorProperties();
         this.testCompletionTimeoutSeconds = properties.getTestCompletionTimeoutSeconds();
 
@@ -115,11 +114,11 @@ public class Coordinator implements Closeable {
 
         startClient();
 
-        new PrepareSessionTask(
-                publicAddresses(registry.getAgents()),
+        new PrepareRunTask(
+                registry.getAgents(),
                 properties.asMap(),
                 new File(getUserDir(), "upload").getAbsoluteFile(),
-                parameters.getSessionId()).run();
+                parameters.getRunId()).run();
 
         installDriver(properties.getVersionSpec());
 
@@ -156,7 +155,7 @@ public class Coordinator implements Closeable {
 
     private void logConfiguration() {
         log("Total number of agents: %s", registry.agentCount());
-        log("Output directory: " + parameters.getOutputDirectory().getAbsolutePath());
+        log("Run path: " + parameters.getRunPath().getAbsolutePath());
 
         int performanceIntervalSeconds
                 = parameters.getSimulatorProperties().getInt("WORKER_PERFORMANCE_MONITOR_INTERVAL_SECONDS");
@@ -186,8 +185,8 @@ public class Coordinator implements Closeable {
             new AgentsDownloadTask(
                     registry,
                     properties.asMap(),
-                    parameters.getOutputDirectory().getParentFile(),
-                    parameters.getSessionId()).run();
+                    parameters.getRunPath(),
+                    parameters.getRunId()).run();
         }
 
         failureCollector.logFailureInfo();
@@ -230,8 +229,8 @@ public class Coordinator implements Closeable {
     public void download() {
         new AgentsDownloadTask(registry,
                 properties.asMap(),
-                parameters.getOutputDirectory().getParentFile(),
-                parameters.getSessionId()).run();
+                parameters.getRunPath(),
+                parameters.getRunId()).run();
 
     }
 
@@ -255,7 +254,7 @@ public class Coordinator implements Closeable {
 
     public void installDriver(String versionSpec) {
         new BashCommand(locatePythonFile("agents_upload_driver.py"))
-                .addParams(AgentData.hostsYaml(registry))
+                .addParams(AgentData.toYaml(registry))
                 .addParams(properties.get("DRIVER"))
                 .execute();
 
@@ -334,7 +333,7 @@ public class Coordinator implements Closeable {
                 .setAll(properties.asMap())
                 .set("CLIENT_ARGS", op.getVmOptions())
                 .set("MEMBER_ARGS", op.getVmOptions())
-                .set("SESSION_ID", parameters.getSessionId())
+                .set("RUN_ID", parameters.getRunId())
                 .setIfNotNull("VERSION_SPEC", op.getVersionSpec())
                 .setIfNotNull("CONFIG", op.getConfig());
 

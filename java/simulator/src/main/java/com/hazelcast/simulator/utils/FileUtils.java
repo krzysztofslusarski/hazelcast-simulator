@@ -244,6 +244,8 @@ public final class FileUtils {
     }
 
     public static File ensureExistingDirectory(File parent, String dirName) {
+        checkNotNull(parent,"parent can't be null");
+        checkNotNull(dirName, "dirname can't be null");
         return ensureExistingDirectory(new File(parent, dirName));
     }
 

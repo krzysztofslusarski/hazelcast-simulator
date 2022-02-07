@@ -56,7 +56,7 @@ public class WorkerProcessLauncher {
     private final WorkerParameters parameters;
     private final SimulatorAddress workerAddress;
 
-    private File sessionDir;
+    private File runId;
 
     WorkerProcessLauncher(WorkerProcessManager processManager,
                           WorkerParameters parameters) {
@@ -68,8 +68,8 @@ public class WorkerProcessLauncher {
     void launch() throws Exception {
         WorkerProcess process = null;
         try {
-            sessionDir = getSessionDirectory();
-            ensureExistingDirectory(sessionDir);
+            runId = getRunId();
+            ensureExistingDirectory(runId);
 
             String type = parameters.getWorkerType();
             LOGGER.info(format("Starting a Java Virtual Machine for %s Worker %s", type, workerAddress));
@@ -87,15 +87,17 @@ public class WorkerProcessLauncher {
         }
     }
 
-    private File getSessionDirectory() {
-        String sessionId = parameters.get("SESSION_ID");
+    private File getRunId() {
+        String runId = parameters.get("RUN_ID");
+        System.out.println("runId: "+runId);
+        System.out.println(parameters);
         File workersDir = ensureExistingDirectory(getSimulatorHome(), "workers");
-        return ensureExistingDirectory(workersDir, sessionId);
+        return ensureExistingDirectory(workersDir, runId);
     }
 
     private WorkerProcess startWorker() throws IOException {
         String workerDirName = parameters.get("WORKER_DIR_NAME");
-        File workerHome = ensureFreshDirectory(new File(sessionDir, workerDirName));
+        File workerHome = ensureFreshDirectory(new File(runId, workerDirName));
 
         copyResourcesToWorkerHome(workerDirName);
 
@@ -112,7 +114,7 @@ public class WorkerProcessLauncher {
         for (String key : keys) {
             String value = parameters.get(key);
             if (key.startsWith(FILE_PREFIX)) {
-                String fileName = key.substring(FILE_PREFIX.length(), key.length());
+                String fileName = key.substring(FILE_PREFIX.length());
                 writeText(value, new File(workerHome, fileName));
             } else {
                 environment.put(key, value);
@@ -179,8 +181,8 @@ public class WorkerProcessLauncher {
 
     private void copyResourcesToWorkerHome(String workerId) {
         File workersHome = new File(getSimulatorHome(), WORKERS_HOME_NAME);
-        String sessionId = parameters.get("SESSION_ID");
-        File uploadDirectory = new File(workersHome, sessionId + "/upload/").getAbsoluteFile();
+        String runId = parameters.get("RUN_ID");
+        File uploadDirectory = new File(workersHome, runId + "/upload/").getAbsoluteFile();
         if (!uploadDirectory.exists() || !uploadDirectory.isDirectory()) {
             LOGGER.debug("Skip copying upload directory to workers since no upload directory was found");
             return;
@@ -188,9 +190,9 @@ public class WorkerProcessLauncher {
 
         String copyCommand = format("cp -rfv %s/%s/upload %s/%s/%s/ || true",
                 workersHome,
-                sessionId,
+                runId,
                 workersHome,
-                sessionId,
+                runId,
                 workerId);
         execute(copyCommand);
         LOGGER.info(format("Finished copying '%s' to Worker", uploadDirectory));
@@ -216,7 +218,7 @@ public class WorkerProcessLauncher {
 
     private String getClasspath(File workerHome) {
         String simulatorHome = getSimulatorHome().getAbsolutePath();
-        String classpath = new File(getSessionDirectory(), "lib/*").getAbsolutePath()
+        String classpath = new File(getRunId(), "lib/*").getAbsolutePath()
                 + CLASSPATH_SEPARATOR + workerHome.getAbsolutePath() + "/upload/*"
                 + CLASSPATH_SEPARATOR + simulatorHome + "/user-lib/*"
                 + uploadDirToClassPath(workerHome)

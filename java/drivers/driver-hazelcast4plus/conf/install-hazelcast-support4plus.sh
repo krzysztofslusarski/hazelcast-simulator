@@ -12,7 +12,9 @@ set -e
 #set -x
 
 local_upload_dir=upload
-user=${SIMULATOR_USER}
+user=ubuntu
+SSH_OPTIONS="-i key"
+#user=${SIMULATOR_USER}
 
 # we limit the number of concurrent uploads
 max_current_uploads=2
@@ -202,10 +204,10 @@ upload() {
     # if there are no provided public ips, then it is a local install
     if [ -z "$public_ips" ] ; then
         echo "Local install"
-        mkdir -p ${SIMULATOR_HOME}/workers/${session_id}/lib
+        mkdir -p ${SIMULATOR_HOME}/workers/${run_id}/lib
 
         for dir in $(find ${local_install_dir} -maxdepth 1 -type d -not -empty); do
-          cp -r ${dir}/* ${SIMULATOR_HOME}/workers/${session_id}/lib
+          cp -r ${dir}/* ${SIMULATOR_HOME}/workers/${run_id}/lib
         done
 
         return

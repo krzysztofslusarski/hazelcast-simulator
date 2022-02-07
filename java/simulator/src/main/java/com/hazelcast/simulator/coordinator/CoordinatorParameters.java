@@ -19,11 +19,11 @@ import com.hazelcast.simulator.common.SimulatorProperties;
 import com.hazelcast.simulator.common.TestPhase;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-import static com.hazelcast.simulator.utils.FileUtils.ensureExistingDirectory;
-import static com.hazelcast.simulator.utils.FileUtils.getUserDir;
 import static com.hazelcast.simulator.utils.Preconditions.checkNotNull;
 
 /**
@@ -31,50 +31,48 @@ import static com.hazelcast.simulator.utils.Preconditions.checkNotNull;
  */
 public class CoordinatorParameters {
 
-    private String sessionId;
+    private File runPath;
     private TestPhase lastTestPhaseToSync = TestPhase.getLastTestPhase();
 
     private SimulatorProperties simulatorProperties;
     private boolean skipDownload;
     private boolean skipShutdownHook;
     private int workerVmStartupDelayMs;
-    private File outputDirectory;
+    private String runId;
 
     public CoordinatorParameters() {
-        setSessionId(new SimpleDateFormat("yyyy-MM-dd__HH_mm_ss").format(new Date()));
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public File getRunPath() {
+        return runPath;
     }
 
-    public CoordinatorParameters setSessionId(String sessionId) {
-        checkNotNull(sessionId, "sessionId can't be null");
+    public String getRunId() {
+        return runId;
+    }
 
-        File file = new File(sessionId);
-        if (!file.isAbsolute()) {
-            file = new File(new File(getUserDir(), "runs"), sessionId);
+    public static String toSHA1(String s) {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
+        md.reset();
+        md.update(s.getBytes());
+        return String.format("%040x", new BigInteger(1, md.digest()));
+    }
 
-        File parentDir = file.getParentFile();
-        if (file.getName().equals("@it")) {
-            int k = 1;
-            for (; ; ) {
-                file = new File(parentDir, String.format("%03d", k));
-                if (!file.exists()) {
-                    break;
-                }
-                k++;
-            }
-        }
+    public CoordinatorParameters setRunPath(String runPath) {
+        checkNotNull(runPath, "runPath can't be null");
 
-        this.sessionId = file.getName();
-        this.outputDirectory = file.getAbsoluteFile();
+
+        this.runPath = new File(runPath);
+        this.runPath.mkdirs();
+        this.runId = toSHA1(runPath);
+        if(simulatorProperties!=null)
+            simulatorProperties.set("RUN_ID", runId);
         return this;
-    }
-
-    public File getOutputDirectory() {
-        return ensureExistingDirectory(outputDirectory);
     }
 
     public TestPhase getLastTestPhaseToSync() {
@@ -92,6 +90,8 @@ public class CoordinatorParameters {
 
     public CoordinatorParameters setSimulatorProperties(SimulatorProperties simulatorProperties) {
         this.simulatorProperties = simulatorProperties;
+        if(runId!=null)
+            simulatorProperties.set("RUN_ID", runId);
         return this;
     }
 

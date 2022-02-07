@@ -1,5 +1,7 @@
 import os.path
 import shutil
+import subprocess
+import time
 from os import path
 
 from subprocess import Popen, PIPE
@@ -27,6 +29,10 @@ def write(file, text):
     f = open(file, 'w')
     f.write(text)
     f.close()
+
+
+def now_seconds():
+    return round(time.time())
 
 
 def remove(file):
@@ -161,6 +167,15 @@ def join_all(*futures):
 def exit_with_error(text):
     error(text)
     exit(1)
+
+
+def shell_logged(cmd, log_file, exit_on_error=False):
+    with open(log_file, "a") as f:
+        result = subprocess.run(cmd, shell=True, text=True, stdout=f, stderr=f)
+        if result.returncode != 0 and exit_on_error:
+            print(f"Failed to run [{cmd}], exitcode: {result.returncode}. Check {log} for details.")
+            exit(1)
+        return result.returncode
 
 
 # Copied

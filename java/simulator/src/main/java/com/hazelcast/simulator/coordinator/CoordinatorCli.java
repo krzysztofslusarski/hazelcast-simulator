@@ -30,6 +30,8 @@ import joptsimple.OptionSpec;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -120,14 +122,9 @@ final class CoordinatorCli {
                     "Defines the number of Workers which execute the RUN phase. The value 0 selects all Workers.")
             .withRequiredArg().ofType(Integer.class).defaultsTo(0);
 
-    private final OptionSpec<String> sessionIdSpec = parser.accepts("sessionId",
-                    "Defines the ID of the Session. If not set the actual date will be used."
-                            + " The session ID is used for creating the working directory."
-                            + " The session ID can also contain a directory e.g. foo/mytest, in this case mytest is the sessionId "
-                            + " and simulator will make use of the foo/mytest directory to write the results."
-                            + " For repeated runs, the session can be set to e.g. somedir/@it. In this case the @it is replaced by "
-                            + " an automatically incrementing number.")
-            .withRequiredArg().ofType(String.class);
+    private final OptionSpec<String> runPathSpec = parser.accepts("runPath", "The path to store the results")
+            .withRequiredArg().ofType(String.class)
+            .defaultsTo("runs/"+new SimpleDateFormat("yyyy-mm-dd_hh:mm:ss").format( Calendar.getInstance().getTime()));
 
     private final OptionSpec<Boolean> verifyEnabledSpec = parser.accepts("verifyEnabled",
                     "Defines if tests are verified.")
@@ -164,7 +161,7 @@ final class CoordinatorCli {
     private final OptionSpec downloadSpec = parser.accepts("download",
             "Downloads all the session directories and applies postprocessing. "
                     + "If this option is set, no other tasks are executed. "
-                    + "If '--sessionId' is set, only that session is downloaded.");
+                    + "If '--runPath' is set, only that session is downloaded.");
 
     private final OptionSpec cleanSpec = parser.accepts("clean",
             "Cleans the remote Worker directories on the provisioned machines. "
@@ -202,7 +199,6 @@ final class CoordinatorCli {
         if (!(options.has(downloadSpec) || options.has(cleanSpec))) {
             this.coordinatorParameters = loadCoordinatorParameters();
             this.properties.set("WORKER_PERFORMANCE_MONITOR_INTERVAL_SECONDS", "" + options.valueOf(performanceMonitorInterval));
-            this.properties.set("SESSION_ID", coordinatorParameters.getSessionId());
             this.coordinator = new Coordinator(registry, coordinatorParameters);
             this.driver = loadDriver(properties.get("DRIVER"))
                     .setAll(properties.asMap())
@@ -227,8 +223,12 @@ final class CoordinatorCli {
 
     void run() throws Exception {
         if (options.has(downloadSpec)) {
-            String sessionId = options.has(sessionIdSpec) ? options.valueOf(sessionIdSpec) : "*";
-            new AgentsDownloadTask(registry, properties.asMap(), getUserDir(), sessionId).run();
+            String runPath = options.has(runPathSpec) ? options.valueOf(runPathSpec) : "*";
+            new AgentsDownloadTask(
+                    registry,
+                    properties.asMap(),
+                    new File(runPath), // broken
+                    CoordinatorParameters.toSHA1(runPath)).run();
         } else if (options.has(cleanSpec)) {
             new AgentsClearTask(registry).run();
         } else {
@@ -252,11 +252,7 @@ final class CoordinatorCli {
                 .setSkipDownload(options.has(skipDownloadSpec))
                 .setWorkerVmStartupDelayMs(options.valueOf(workerVmStartupDelayMsSpec));
 
-        if (options.has(sessionIdSpec)) {
-            coordinatorParameters.setSessionId(options.valueOf(sessionIdSpec));
-        }
-
-
+        coordinatorParameters.setRunPath(options.valueOf(runPathSpec));
         return coordinatorParameters;
     }
 

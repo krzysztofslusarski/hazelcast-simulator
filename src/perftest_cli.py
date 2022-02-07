@@ -252,7 +252,7 @@ class PerftestExecCli:
                             default=0,
                             help="Defines the number of Workers which execute the RUN phase. The value 0 selects all Workers.")
 
-        parser.add_argument('--sessionId',
+        parser.add_argument('--runPath',
                             nargs=1,
                             help="Defines the ID of the Session. If not set the actual date will be used."
                                  + " The session ID is used for creating the working directory."
@@ -306,8 +306,8 @@ class PerftestExecCli:
         tags = parse_tags(args.tag)
 
         perftest = PerfTest()
-        session_id = perftest.exec(test,
-                                   session_id=args.sessionId,
+        run_path = perftest.exec(test,
+                                   run_path=args.sessionId,
                                    performance_monitor_interval_seconds=args.performanceMonitorInterval,
                                    worker_vm_startup_delay_ms=args.workerVmStartupDelayMs,
                                    parallel=args.parallel,
@@ -327,7 +327,7 @@ class PerftestExecCli:
                                    client_type=args.clientType,
                                    skip_download=args.skipDownload)
 
-        perftest.collect(f"runs/{session_id}/", tags)
+        perftest.collect(f"runs/{run_path}/", tags)
 
 
 class PerftestTerminateCli:

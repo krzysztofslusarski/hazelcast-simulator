@@ -53,7 +53,7 @@ public class CoordinatorRunMonolithTest {
         driver = new Hazelcast4PlusDriver()
                 .setAgents(registry.getAgents())
                 .setAll(simulatorProperties.asMap())
-                .set("SESSION_ID", coordinatorParameters.getSessionId());
+                .set("RUN_ID", coordinatorParameters.getRunPath());
 
         coordinator = new Coordinator(registry, coordinatorParameters);
         coordinator.start();
