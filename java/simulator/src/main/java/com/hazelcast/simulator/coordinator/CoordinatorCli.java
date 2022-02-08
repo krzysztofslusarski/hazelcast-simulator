@@ -124,7 +124,7 @@ final class CoordinatorCli {
 
     private final OptionSpec<String> runPathSpec = parser.accepts("runPath", "The path to store the results")
             .withRequiredArg().ofType(String.class)
-            .defaultsTo("runs/"+new SimpleDateFormat("yyyy-mm-dd_hh:mm:ss").format( Calendar.getInstance().getTime()));
+            .defaultsTo("runs/" + new SimpleDateFormat("yyyy-mm-dd_hh:mm:ss").format(Calendar.getInstance().getTime()));
 
     private final OptionSpec<Boolean> verifyEnabledSpec = parser.accepts("verifyEnabled",
                     "Defines if tests are verified.")

@@ -133,18 +133,6 @@ public class SimulatorProperties {
                 String value = (String) entry.getValue();
                 properties.put(key, new Value(isDefault, value));
             }
-
-            if (containsKey("HAZELCAST_VERSION_SPEC")) {
-                throw new IOException("'HAZELCAST_VERSION_SPEC' property is no longer supported, use 'VERSION_SPEC' instead.");
-            }
-
-            if (containsKey("MACHINE_SPEC")) {
-                throw new IOException("'MACHINE_SPEC' property is no longer supported, use 'INSTANCE_TYPE', instead.");
-            }
-
-            if (containsKey("USER")) {
-                throw new IOException("'USER' property is no longer supported, Use 'SIMULATOR_USER' instead.");
-            }
         } catch (IOException e) {
             throw rethrow(e);
         } finally {

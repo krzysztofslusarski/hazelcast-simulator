@@ -50,8 +50,6 @@ public class WorkerProcessLauncher {
     private static final String FILE_PREFIX = "file:";
 
     private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
-
-    /// private final Agent agent;
     private final WorkerProcessManager processManager;
     private final WorkerParameters parameters;
     private final SimulatorAddress workerAddress;
