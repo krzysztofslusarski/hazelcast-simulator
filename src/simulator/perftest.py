@@ -6,6 +6,8 @@ from datetime import datetime
 import os
 import yaml
 import csv
+
+from load_hosts import load_hosts
 from simulator.hosts import public_ip, ssh_user, ssh_options
 from simulator.ssh import SSH
 from simulator.util import read, write, shell, run_parallel, bin_dir, exit_with_error, simulator_home, shell_logged
@@ -16,36 +18,21 @@ class PerfTest:
 
     def __init__(self, logfile=None, log_shell_command=False):
         self.logfile = logfile
-        self.log_shell_command = log_shell_command
+        self.log_shell_command = True #log_shell_command
         pass
 
-    def terminate(self, inventory, workload):
-        log_header(f"perftest terminate: started")
-        self.__terminate("nodes", inventory, workload)
-        self.__terminate("loadgenerators", inventory, workload)
-        log_header(f"perftest terminate: started")
-
-    def __terminate(self, group_class, inventory, workload):
-        hosts = self.__gather(inventory, workload[group_class]['group'])
-        if not hosts:
-            return
-        run_parallel(self.__kill_java, [(host,) for host in hosts])
 
     def __kill_java(self, host):
         ssh = SSH(public_ip(host), ssh_user(host), ssh_options(host))
         ssh.scp_to_remote(f"{bin_dir}/hidden/kill_java", ".")
         ssh.exec("./kill_java")
 
-    def __gather(self, inventory, desired_groupname=None):
-        if not desired_groupname:
-            return inventory
 
-        filtered = []
-        for host in inventory:
-            if host['groupname'] == desired_groupname:
-                filtered.append(host)
-
-        return filtered
+    def terminate(self, host_pattern):
+        log_header(f"perftest terminate: started")
+        hosts = load_hosts(host_pattern)
+        run_parallel(self.__kill_java, [(host,) for host in hosts])
+        log_header(f"perftest terminate: started")
 
     def exec(self,
              test,
@@ -142,7 +129,10 @@ class PerfTest:
 
     def run(self, tests, tags):
         for test in tests:
-            repetitions = test['repetitions']
+            repetitions = test.get('repetitions')
+            if not repetitions:
+                repetitions = 1
+
             for i in range(0, repetitions):
                 run_path = self.run_test(test)
                 self.collect(run_path, tags)

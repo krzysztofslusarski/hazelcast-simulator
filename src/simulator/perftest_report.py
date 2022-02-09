@@ -1077,7 +1077,8 @@ class HTMLReport:
 
 class PerfTestReportCli:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Creating a benchmark report from one or more benchmarks.')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Creating a benchmark report from one or more benchmarks.')
         parser.add_argument('benchmarks', metavar='B', nargs='+',
                     help='a benchmark to be used in the comparison')
         # parser.add_argument('-r', '--realtime', default='report', help='print the real time of the datapoints.')

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import os
 import subprocess
 from datetime import datetime
 import argparse
@@ -8,7 +8,7 @@ from pathlib import Path
 import simulator.log
 from simulator.log import info
 from simulator.perftest import PerfTest
-from simulator.util import validate_git_repo, load_yaml_file, exit_with_error, shell_logged, now_seconds
+from simulator.util import validate_git_dir, load_yaml_file, exit_with_error, shell_logged, now_seconds, validate_dir
 
 default_tests_path = 'tests.yaml'
 logfile_name="run.log"
@@ -23,8 +23,8 @@ def get_project_version(dir):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
 
-def run(test, commit, runs, repo):
-    version = get_project_version(repo)
+def run(test, commit, runs, git_dir):
+    version = get_project_version(git_dir)
     test_name = test['name']
     test['version'] = f"maven={version}"
     commit_dir = f"runs/{test_name}/{commit}"
@@ -41,10 +41,10 @@ def run(test, commit, runs, repo):
         perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name})
 
 
-def build(commit, repo):
+def build(commit, path):
     exitcode = shell_logged(f"""
         set -e
-        cd {repo}
+        cd {path}
         git pull origin master
         git checkout {commit}
         mvn clean install -DskipTests -Dquick
@@ -55,20 +55,21 @@ def build(commit, repo):
 class RunCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Runs benchmarks')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Runs benchmarks')
         parser.add_argument('--tests', nargs='?', help='The tests file', default=default_tests_path)
-
-        parser.add_argument("commits", nargs="+", help="The commits to build")
-        parser.add_argument("-c", "--count", nargs=1, help="The number of runs per commit", default=3)
-        parser.add_argument("-r", "--repo", help="The directory containing the git repo", nargs=1,
-                            default=['hazelcast'])
+        parser.add_argument("commits", nargs="+", help="The commits to build", type=int)
+        parser.add_argument("-c", "--count", nargs=1, help="The number of runs per commit", default=3, type=int)
+        parser.add_argument("-p", "--path", help="The path to the project to build", nargs=1,
+                            default=[os.getcwd()])
 
         args = parser.parse_args()
         commits = args.commits
         count = args.count
-        repo = validate_git_repo(args.repo[0])
+        path = validate_dir(args.path[0])
         tests = load_yaml_file(args.tests)
 
+        info(f"Path {path}")
         info(f"Number of commits {len(commits)}")
 
         start = now_seconds()
@@ -91,13 +92,13 @@ class RunCli:
                 info(f"Commit {commitIndex + 1}/{len(commits)}")
                 info(f"Building {commit}")
                 if not commit_was_build:
-                    if build(commit, repo):
+                    if build(commit, path):
                         commit_was_build = True
                     else:
                         info("Build failed, skipping runs.")
                         continue
 
-                run(test, commit, remaining, repo)
+                run(test, commit, remaining, path)
                 info(f"Testing {test_name} took {now_seconds() - start_test}s")
 
         duration = now_seconds() - start

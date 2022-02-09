@@ -108,7 +108,8 @@ The available commands are:
 class InventoryInstallCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Installs software', usage=usage)
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Installs software', usage=usage)
         parser.add_argument('command', help='Subcommand to run')
 
         args = parser.parse_args(sys.argv[2:3])
@@ -119,10 +120,11 @@ class InventoryInstallCli:
         getattr(self, args.command)()
 
     def java(self):
-        parser = argparse.ArgumentParser(description='Install Java')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Install Java')
         parser.add_argument("--url", help="The url of the JDK tar.gz file", default=default_url)
         parser.add_argument("--examples", help="Shows example urls", action='store_true')
-        parser.add_argument("--hosts", help="The target hosts.", default="all")
+        parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
         args = parser.parse_args(sys.argv[3:])
 
@@ -144,9 +146,10 @@ class InventoryInstallCli:
         log_header("Installing Java: Done")
 
     def async_profiler(self):
-        parser = argparse.ArgumentParser(description='Install Async Profiler')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Install Async Profiler')
         parser.add_argument("--version", help="Async profiler version", default="2.6")
-        parser.add_argument("--hosts", help="The target hosts.", default="all")
+        parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
         args = parser.parse_args(sys.argv[3:])
 
@@ -163,8 +166,9 @@ class InventoryInstallCli:
         log_header("Installing Async Profiler: Done")
 
     def perf(self):
-        parser = argparse.ArgumentParser(description='Install Linux Perf')
-        parser.add_argument("--hosts", help="The target hosts.", default="all")
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Install Linux Perf')
+        parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
         args = parser.parse_args(sys.argv[3:])
 
@@ -178,8 +182,9 @@ class InventoryInstallCli:
         log_header("Installing Perf: Done")
 
     def simulator(self):
-        parser = argparse.ArgumentParser(description='Install Simulator')
-        parser.add_argument("--hosts", help="The target hosts.", default="all")
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Install Simulator')
+        parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
         args = parser.parse_args(sys.argv[3:])
 
         hosts = args.hosts
@@ -196,7 +201,8 @@ class InventoryInstallCli:
 
 class InventoryImportCli:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Imports the inventory from a terraform installation.')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Imports the inventory from a terraform installation.')
         parser.parse_args(sys.argv[2:])
 
         log_header("Inventory import")
@@ -217,7 +223,8 @@ class InventoryImportCli:
 
 class InventoryApplyCli:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Creates the inventory')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Creates the inventory')
         parser.add_argument("-f", "--force",
                             help="Forces the destruction of the inventory (even when inventory.yaml doesn't exist)",
                             action='store_true')
@@ -245,7 +252,8 @@ class InventoryApplyCli:
 
 class InventoryDestroyCli:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Destroys the inventory')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Destroys the inventory')
         parser.add_argument("-f", "--force",
                             help="Forces the destruction of the inventory (even when inventory.yaml doesn't exist)",
                             action='store_true')
@@ -275,7 +283,8 @@ class InventoryDestroyCli:
 
 class InventoryShellCli:
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Executes a shell command on the inventory', )
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Executes a shell command on the inventory', )
         parser.add_argument("command", help="The command to execute", nargs='?')
         parser.add_argument("--hosts", help="The target hosts.", default="all")
         parser.add_argument('-p', "--ping", help="Checks if the inventory is reachable", action='store_true')
@@ -318,7 +327,9 @@ class InventoryShellCli:
 class InventoryCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Manages the inventory of resources', usage=usage)
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Manages the inventory of resources',
+                                         usage=usage)
         parser.add_argument('command', help='Subcommand to run')
 
         args = parser.parse_args(sys.argv[1:2])

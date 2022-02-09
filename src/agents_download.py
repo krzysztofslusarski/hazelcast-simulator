@@ -14,6 +14,7 @@ agents_yaml = yaml.safe_load(sys.argv[3])
 
 def __agent_download(agent):
     print(f"[INFO]     {public_ip(agent)} Download")
+    print(f"[INFO]     {agent} Download")
 
     if run_id == "*":
         download_path = f"hazelcast-simulator/workers/"

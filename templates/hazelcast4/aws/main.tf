@@ -130,8 +130,8 @@ resource "aws_instance" "nodes" {
     tags = {
         Name  = "Simulator Node ${local.settings.basename}"
         Owner = local.settings.owner
-        "ansible_ssh_private_key_file" = local.settings.keypair.private_key
-        "ansible_user" = local.settings.nodes.user
+        "passthrough:ansible_ssh_private_key_file" = local.settings.keypair.private_key
+        "passthrough:ansible_user" = local.settings.nodes.user
     }
 }
 
@@ -196,8 +196,8 @@ resource "aws_instance" "loadgenerators" {
     tags = {
         Name  = "Simulator Load Generator ${local.settings.basename}"
         Owner = local.settings.owner
-        "ansible_ssh_private_key_file" = local.settings.keypair.private_key
-        "ansible_user" = local.settings.loadgenerators.user
+        "passthrough:ansible_ssh_private_key_file" = local.settings.keypair.private_key
+        "passthrough:ansible_user" = local.settings.loadgenerators.user
     }
 } 
 
@@ -262,8 +262,8 @@ resource "aws_instance" "mc" {
     tags = {
         Name  = "Simulator MC ${local.settings.basename}"
         Owner = local.settings.owner
-        "ansible_ssh_private_key_file" = local.settings.keypair.private_key
-        "ansible_user" = local.settings.mc.user
+        "passthrough:ansible_ssh_private_key_file" = local.settings.keypair.private_key
+        "passthrough:ansible_user" = local.settings.mc.user
     }
 
     connection {

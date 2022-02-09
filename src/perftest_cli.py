@@ -6,7 +6,6 @@ import argparse
 import getpass
 from os import path
 
-from inventory_flatten import load_flattened_inventory
 from simulator.log import log_header, info
 from simulator.perftest import PerfTest
 from simulator.ssh import new_key
@@ -52,7 +51,8 @@ def parse_tags(items):
 class PerftestCreateCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser("Creates a new performance test based on a template")
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description="Creates a new performance test based on a template")
         parser.add_argument("name",
                             help="The name of the performance test.", nargs='?')
         parser.add_argument("--template",
@@ -111,7 +111,8 @@ class PerftestCreateCli:
 class PerftestCloneCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description="Clones an existing performance test")
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description="Clones an existing performance test")
         parser.add_argument("source", help="The name of source performance test.")
         parser.add_argument("destination", help="The directory for the destination performance test.")
         parser.add_argument("--force", help="Force using the destination directory if it already exists",
@@ -172,7 +173,8 @@ class PerftestCloneCli:
 class PerftestRunCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Runs a tests.yaml which is a self contained set of tests')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Runs a tests.yaml which is a self contained set of tests')
         parser.add_argument('file', nargs='?', help='The tests file', default=default_tests_path)
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         args = parser.parse_args(sys.argv[2:])
@@ -186,7 +188,8 @@ class PerftestRunCli:
 class PerftestExecCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Executes a performance test.')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Executes a performance test.')
         parser.add_argument('file', nargs='?', help='The test file', default=default_tests_path)
 
         parser.add_argument('--performanceMonitorInterval',
@@ -334,19 +337,22 @@ class PerftestExecCli:
 class PerftestTerminateCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Terminates running performance test')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Terminates running performance test')
+        parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
         args = parser.parse_args(sys.argv[2:])
 
-        inventory = load_flattened_inventory()
+        hosts = args.hosts
 
         perftest = PerfTest()
-        perftest.terminate(args.dir, inventory)
+        perftest.terminate(hosts)
 
 
 class PerftestCollectCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Collects the results from a performance test')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Collects the results from a performance test')
         parser.add_argument("dir", help="The directory with the test runs")
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         args = parser.parse_args(sys.argv[2:])
@@ -364,7 +370,8 @@ class PerftestCollectCli:
 class PerftestCleanCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Cleans to  load generators')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Cleans to  load generators')
         args = parser.parse_args(sys.argv[2:])
 
         log_header("perftest clean")
@@ -378,7 +385,8 @@ class PerftestCleanCli:
 class PerftestCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Management and execution of performance tests', usage=usage)
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Management and execution of performance tests', usage=usage)
         parser.add_argument('command', help='Subcommand to run')
 
         args = parser.parse_args(sys.argv[1:2])

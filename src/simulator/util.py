@@ -45,16 +45,6 @@ def remove(file):
         shutil.rmtree(file)
 
 
-def validate_git_repo(path):
-    validate_dir(path)
-
-    if not os.path.isdir(f"{path}/.git"):
-        print(f"Directory [{path}] does not contain a git repository")
-        exit(1)
-
-    return path
-
-
 def validate_dir(path):
     path = os.path.expanduser(path)
 
@@ -203,5 +193,3 @@ def shell(cmd, shell=True, split=False, use_print=False):
                     print(line)
                 else:
                     log(line, log_level)
-
-

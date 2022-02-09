@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
-from simulator.util import load_yaml_file, validate_git_repo, validate_dir, exit_with_error, mkdir
+from simulator.util import load_yaml_file, validate_git_dir, validate_dir, exit_with_error, mkdir
 
 
 class TimeSeries:
@@ -156,7 +156,7 @@ def pick_best_value(values):
     return best
 
 
-def get_ordered_commits(dir, repo):
+def get_ordered_commits(dir, git_dir):
     commits = []
     for file in os.listdir(dir):
         if os.path.isdir(f"{dir}/{file}"):
@@ -166,15 +166,15 @@ def get_ordered_commits(dir, repo):
     if not commits:
         exit_with_error(f"No commits found in directory [dir]")
 
-    cmd = f"order_commits --repo {repo} {' '.join(commits)}"
+    cmd = f"order_commits --git-dir {git_dir} {' '.join(commits)}"
     ordered_commits = subprocess.check_output(cmd, shell=True, text=True).splitlines()
     return ordered_commits
 
 
-def load_timeseries(dir, repo):
+def load_timeseries(dir, git_dir):
     y_map = {}
     x_map = {}
-    for commit in get_ordered_commits(dir, repo):
+    for commit in get_ordered_commits(dir, git_dir):
         result = load_commit_dir(dir, commit)
 
         for metric_name, values in result.items():
@@ -211,24 +211,25 @@ class PerfAnalysisCli:
     def __init__(self):
         os.path.expanduser('~/your_directory')
 
-        parser = argparse.ArgumentParser(description='Does performance analysis')
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Does performance analysis')
         parser.add_argument("dir", help="The directory containing the commit hashes", nargs=1)
-        parser.add_argument("-r", "--repo", help="The directory containing the git repo", nargs=1,
-                            default=['hazelcast'])
+        parser.add_argument("-g", "--git-dir", metavar='git_dir', help="The directory containing the git repo", nargs=1,
+                            default=[f"{os.getcwd()}/.git"])
         parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
         parser.add_argument("-z", "--zero", help="Plot from zero", action='store_true')
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
 
         args = parser.parse_args()
-        repo = validate_git_repo(args.repo[0])
+        git_dir = validate_dir(args.git_dir[0])
         latest = args.latest[0]
         dir = validate_dir(args.dir[0])
         output = mkdir(args.output[0])
 
         # We need to determine if the time series has 'positive' or 'negative'
 
-        result = load_timeseries(dir, repo)
+        result = load_timeseries(dir, git_dir)
         for metric, ts in result.items():
             if latest:
                 print(f"Taking the last {latest} items of timeseries with {len(ts)} items")

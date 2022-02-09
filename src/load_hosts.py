@@ -36,7 +36,6 @@ def load_hosts(host_pattern = "all"):
                 if not hostname in desired_hosts:
                     continue
 
-                print(hostname)
                 new_host = {}
                 result.append(new_host)
                 new_host['public_ip'] = hostname

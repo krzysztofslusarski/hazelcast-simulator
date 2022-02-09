@@ -52,15 +52,13 @@ def terraform_import(terraform_plan):
         host_map = {}
         for json_host in json_host_list:
             host_name = json_host['public_ip']
-            host_data = {'public_ip': json_host['public_ip'],
-                         'private_ip': json_host['private_ip'],
-                         'ansible_host': json_host['public_ip']}
+            host_data = {'private_ip': json_host['private_ip']}
             tags = json_host.get("tags")
 
             if tags:
                 for key, value in tags.items():
-                    if key.startswith("ansible_"):
-                        host_data[key] = value
+                    if key.startswith("passthrough:"):
+                        host_data[key[len("passthrough:"):]] = value
 
             host_map[host_name] = host_data
 

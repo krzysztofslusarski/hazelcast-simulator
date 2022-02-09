@@ -29,7 +29,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.simulator.coordinator.registry.AgentData.AgentWorkerMode.CLIENTS_ONLY;
 import static com.hazelcast.simulator.coordinator.registry.AgentData.AgentWorkerMode.MEMBERS_ONLY;
 import static com.hazelcast.simulator.coordinator.registry.AgentData.AgentWorkerMode.MIXED;
+import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 import static com.hazelcast.simulator.utils.FormatUtils.HORIZONTAL_RULER;
 import static com.hazelcast.simulator.utils.FormatUtils.formatLong;
-import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 import static java.lang.Math.ceil;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -75,6 +74,15 @@ public class Registry {
         AgentData agent = new AgentData(agentIndex.incrementAndGet(), publicAddress, privateAddress, tags);
         agents.add(agent);
         return agent;
+    }
+
+    public AgentData getAgent(String publicIp) {
+        for (AgentData agentData : agents) {
+            if (agentData.getPublicAddress().equals(publicIp)) {
+                return agentData;
+            }
+        }
+        return null;
     }
 
     public void assignDedicatedMemberMachines(int dedicatedMemberMachineCount) {
@@ -339,68 +347,63 @@ public class Registry {
 
     public static Registry loadInventoryYaml(File file, String loadGeneratorGroup, String nodeGroup) {
         Registry registry = new Registry();
+        List<AgentData> nodes = loadAgents(registry, nodeGroup);
+        List<AgentData> loadGenerators = loadAgents(registry, loadGeneratorGroup);
 
-        String out = new BashCommand(locatePythonFile("inventory_flatten.py"))
+        for (AgentData agentData : registry.getAgents()) {
+            boolean isNode = nodes.contains(agentData);
+            boolean isLoadGenerator = loadGenerators.contains(agentData);
+
+            if (isNode && !isLoadGenerator) {
+                agentData.setAgentWorkerMode(MEMBERS_ONLY);
+            } else if (!isNode && isLoadGenerator) {
+                agentData.setAgentWorkerMode(CLIENTS_ONLY);
+            } else {
+                agentData.setAgentWorkerMode(MIXED);
+            }
+        }
+
+        return registry;
+    }
+
+    private static List<AgentData> loadAgents(Registry registry, String nodeGroup) {
+        List<AgentData> agents = new ArrayList<>();
+        if (nodeGroup == null) {
+            return agents;
+        }
+
+        String out = new BashCommand(locatePythonFile("load_hosts.py"))
+                .addParams(nodeGroup)
                 .execute();
 
         Yaml yaml = new Yaml();
         List<Map> hosts = yaml.load(out);
 
-        Set<String> groups = new HashSet<>();
         for (Map<String, Object> host : hosts) {
-            groups.add((String) host.get("groupname"));
-        }
-
-        if (groups.size() > 1) {
-            if (loadGeneratorGroup == null) {
-                loadGeneratorGroup = "loadgenerators";
-            }
-
-            if (nodeGroup == null) {
-                nodeGroup = "nodes";
-            }
-        }
-
-        for (Map<String, Object> host : hosts) {
-            String groupName = (String) host.get("groupname");
-
-            if (nodeGroup != null && loadGeneratorGroup != null) {
-                if (!(groupName.equals(loadGeneratorGroup) || groupName.equals(nodeGroup))) {
-                    continue;
-                }
-            }
-
             String publicIp = (String) host.get("public_ip");
-            String privateIp = (String) host.get("private_ip");
-            if (privateIp == null) {
-                privateIp = publicIp;
-            }
-
-            Map<String, String> tags = new HashMap<>();
-            tags.put("group", groupName);
-            for (String key : host.keySet()) {
-                if (key.equals("public_ip") || key.equals("private_ip")) {
-                    continue;
+            AgentData agentData = registry.getAgent(publicIp);
+            if (agentData == null) {
+                String groupName = (String) host.get("groupname");
+                String privateIp = (String) host.get("private_ip");
+                if (privateIp == null) {
+                    privateIp = publicIp;
                 }
-                tags.put(key, "" + host.get(key));
-            }
-            AgentData agentData = registry.addAgent(publicIp, privateIp, tags);
 
-            agentData.setSshOptions((String) host.get("ssh_options"));
-            agentData.setSshUser((String) host.get("ssh_user"));
-
-            if (groupName.equals(loadGeneratorGroup)) {
-                agentData.setAgentWorkerMode(CLIENTS_ONLY);
-            } else {
-                if (loadGeneratorGroup == null) {
-                    agentData.setAgentWorkerMode(MIXED);
-                } else {
-                    agentData.setAgentWorkerMode(MEMBERS_ONLY);
+                Map<String, String> tags = new HashMap<>();
+                tags.put("group", groupName);
+                for (String key : host.keySet()) {
+                    if (key.equals("public_ip") || key.equals("private_ip")) {
+                        continue;
+                    }
+                    tags.put(key, "" + host.get(key));
                 }
+                agentData = registry.addAgent(publicIp, privateIp, tags);
+                agentData.setSshOptions((String) host.get("ssh_options"));
+                agentData.setSshUser((String) host.get("ssh_user"));
             }
+            agents.add(agentData);
         }
-
-        return registry;
+        return agents;
     }
 
 }

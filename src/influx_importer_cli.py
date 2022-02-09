@@ -12,7 +12,7 @@ from simulator.util import exit_with_error, load_yaml_file
 class InfluxImporterCli:
 
     def __init__(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument("directory", help="The directory to scan recursively", nargs=1)
         parser.add_argument("--database", help="The name of database", default="mydb")
         parser.add_argument("--port", help="The port", default="8086")
