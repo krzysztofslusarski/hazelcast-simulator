@@ -8,10 +8,10 @@ from pathlib import Path
 import simulator.log
 from simulator.log import info
 from simulator.perftest import PerfTest
-from simulator.util import validate_git_dir, load_yaml_file, exit_with_error, shell_logged, now_seconds, validate_dir
+from simulator.util import load_yaml_file, shell_logged, now_seconds, validate_dir
 
 default_tests_path = 'tests.yaml'
-logfile_name="run.log"
+logfile_name = "run.log"
 
 
 def get_project_version(dir):

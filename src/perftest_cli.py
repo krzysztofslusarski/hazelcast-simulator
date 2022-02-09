@@ -22,7 +22,7 @@ The available commands are:
     collect     Collects the performance test data and stores it in result.yaml.
     exec        Executes a performance test.'
     run         Runs a tests.yaml which is a self contained set of tests'
-    terminate   Terminate all running performance tests.   
+    kill_java   Kills all Java processes   
     report      Generate performance report 
 '''
 
@@ -195,36 +195,39 @@ class PerftestExecCli:
         parser.add_argument('--performanceMonitorInterval',
                             nargs=1,
                             default=10,
-                            help='Defines the interval for throughput and latency snapshots on the workers. # 0 disabled tracking performance.')
+                            help='Defines the interval for throughput and latency snapshots on the workers. '
+                                 '# 0 disabled tracking performance.')
 
         parser.add_argument('--workerVmStartupDelayMs',
                             nargs=1,
                             default=0,
-                            help="Amount of time in milliseconds to wait between starting up the next worker. This is useful to prevent"
-                                 + "duplicate connection issues.")
+                            help="Amount of time in milliseconds to wait between starting up the next worker. This is "
+                                 "useful to prevent duplicate connection issues.")
 
         parser.add_argument('--driver',
                             default="hazelcast5",
                             nargs=1,
-                            help="The driver to run. Available options hazelcast5,hazelcast5-enterprise,hazelcast4,hazelcast-enterprise4,"
-                                 + "hazelcast3,hazelcast-enterprise3,ignite2,infinispan9,infinispan10,"
-                                 + "infinispan11,couchbase,lettuce5,lettucecluster5,jedis3")
+                            help="The driver to run. Available options hazelcast5,hazelcast5-enterprise,hazelcast4,"
+                                 "hazelcast-enterprise4, hazelcast3,hazelcast-enterprise3,ignite2,infinispan9,"
+                                 "infinispan10,infinispan11,couchbase,lettuce5,lettucecluster5,jedis3")
 
         parser.add_argument('--version',
                             nargs=1,
-                            help="The version of the vendor to use. Only hazelcast3/4/5 (and enterprise) will use this version")
+                            help="The version of the vendor to use. Only hazelcast3/4/5 (and enterprise) will "
+                                 "use this version")
 
         parser.add_argument('--duration',
                             nargs=1,
                             default="0s",
-                            help="Amount of time to execute the RUN phase per test, e.g. 10s, 1m, 2h or 3d. If duration is set to 0, "
-                                 + "the test will run until the test decides to stop.")
+                            help="Amount of time to execute the RUN phase per test, e.g. 10s, 1m, 2h or 3d. If duration"
+                                 " is set to 0, the test will run until the test decides to stop.")
 
         parser.add_argument('--members',
                             nargs=1,
                             default=-1,
-                            help="Number of cluster member Worker JVMs. If no value is specified and no mixed members are specified,"
-                                 + " then the number of cluster members will be equal to the number of machines in the agents file.")
+                            help="Number of cluster member Worker JVMs. If no value is specified and no mixed members "
+                                 "are specified, then the number of cluster members will be equal to the number of "
+                                 "machines in the agents file.")
 
         parser.add_argument('--clients',
                             nargs=1,
@@ -253,16 +256,12 @@ class PerftestExecCli:
         parser.add_argument('--targetCount',
                             nargs=1,
                             default=0,
-                            help="Defines the number of Workers which execute the RUN phase. The value 0 selects all Workers.")
+                            help="Defines the number of Workers which execute the RUN phase. The value 0 selects "
+                                 "all Workers.")
 
         parser.add_argument('--runPath',
                             nargs=1,
-                            help="Defines the ID of the Session. If not set the actual date will be used."
-                                 + " The session ID is used for creating the working directory."
-                                 + " The session ID can also contain a directory e.g. foo/mytest, in this case mytest is the sessionId "
-                                 + " and simulator will make use of the foo/mytest directory to write the results."
-                                 + " For repeated runs, the session can be set to e.g. somedir/@it. In this case the @it is replaced by "
-                                 + " an automatically incrementing number.")
+                            help="The path where the result of the run need to be stored.")
 
         parser.add_argument('--verifyEnabled',
                             default="true",
@@ -270,7 +269,8 @@ class PerftestExecCli:
 
         parser.add_argument('--failFast',
                             default="true",
-                            help="Defines if the TestSuite should fail immediately when a test from a TestSuite fails instead of continuing.")
+                            help="Defines if the TestSuite should fail immediately when a test from a TestSuite fails "
+                                 "instead of continuing.")
 
         parser.add_argument('--parallel',
                             action='store_true',
@@ -334,18 +334,18 @@ class PerftestExecCli:
         perftest.collect(run_path, tags)
 
 
-class PerftestTerminateCli:
+class PerftestKillJavaCli:
 
     def __init__(self):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                         description='Terminates running performance test')
+                                         description='Kills all Java processes')
         parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
         args = parser.parse_args(sys.argv[2:])
 
         hosts = args.hosts
 
         perftest = PerfTest()
-        perftest.terminate(hosts)
+        perftest.kill_java(hosts)
 
 
 class PerftestCollectCli:
@@ -411,8 +411,8 @@ class PerftestCli:
     def exec(self):
         PerftestExecCli()
 
-    def terminate(self):
-        PerftestTerminateCli()
+    def kill_java(self):
+        PerftestKillJavaCli()
 
     def collect(self):
         PerftestCollectCli()

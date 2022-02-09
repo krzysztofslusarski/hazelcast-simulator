@@ -18,21 +18,19 @@ class PerfTest:
 
     def __init__(self, logfile=None, log_shell_command=False):
         self.logfile = logfile
-        self.log_shell_command = True #log_shell_command
+        self.log_shell_command = log_shell_command
         pass
-
 
     def __kill_java(self, host):
         ssh = SSH(public_ip(host), ssh_user(host), ssh_options(host))
         ssh.scp_to_remote(f"{bin_dir}/hidden/kill_java", ".")
         ssh.exec("./kill_java")
 
-
-    def terminate(self, host_pattern):
-        log_header(f"perftest terminate: started")
+    def kill_java(self, host_pattern):
+        log_header(f"perftest kill_java: started")
         hosts = load_hosts(host_pattern)
         run_parallel(self.__kill_java, [(host,) for host in hosts])
-        log_header(f"perftest terminate: started")
+        log_header(f"perftest kill_java: done")
 
     def exec(self,
              test,
