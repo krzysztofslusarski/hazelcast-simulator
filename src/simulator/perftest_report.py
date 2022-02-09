@@ -1076,7 +1076,7 @@ class HTMLReport:
 
 
 class PerfTestReportCli:
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Creating a benchmark report from one or more benchmarks.')
         parser.add_argument('benchmarks', metavar='B', nargs='+',
@@ -1092,7 +1092,7 @@ class PerfTestReportCli:
         parser.add_argument('--svg', help='SVG instead of PNG graphics.', action="store_true")
 
         global args
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
         global benchmark_args
         benchmark_args = args.benchmarks
 

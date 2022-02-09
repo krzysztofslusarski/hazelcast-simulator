@@ -167,13 +167,13 @@ final class CoordinatorCli {
             "Cleans the remote Worker directories on the provisioned machines. "
                     + "If this option is set, no other tasks are executed");
 
-    private final OptionSpec<String> nodeGroupSpec = parser.accepts("nodeGroup",
+    private final OptionSpec<String> nodeHostsSpec = parser.accepts("nodeHosts",
                     "The name of the group that makes up the nodes.")
-            .withRequiredArg().ofType(String.class);
+            .withRequiredArg().ofType(String.class).defaultsTo("all|!mc");
 
-    private final OptionSpec<String> loadGeneratorGroupSpec = parser.accepts("loadGeneratorGroup",
+    private final OptionSpec<String> loadGeneratorHostsSpec = parser.accepts("loadGeneratorHosts",
                     "The name of the group that makes up the loadGenerator.")
-            .withRequiredArg().ofType(String.class);
+            .withRequiredArg().ofType(String.class).defaultsTo("all|!mc");
 
 
     private final OptionSet options;
@@ -348,8 +348,8 @@ final class CoordinatorCli {
         Registry registry;
         registry = Registry.loadInventoryYaml(
                 locateInventoryFile(),
-                options.valueOf(loadGeneratorGroupSpec),
-                options.valueOf(nodeGroupSpec));
+                options.valueOf(loadGeneratorHostsSpec),
+                options.valueOf(nodeHostsSpec));
 
 
         if (options.has(dedicatedMemberMachinesSpec)) {

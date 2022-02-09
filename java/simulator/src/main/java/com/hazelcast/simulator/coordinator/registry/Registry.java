@@ -23,6 +23,7 @@ import com.hazelcast.simulator.coordinator.registry.AgentData.AgentWorkerMode;
 import com.hazelcast.simulator.protocol.core.SimulatorAddress;
 import com.hazelcast.simulator.utils.BashCommand;
 import com.hazelcast.simulator.utils.CommandLineExitException;
+import org.apache.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -345,10 +346,20 @@ public class Registry {
         return tests.get(testId);
     }
 
-    public static Registry loadInventoryYaml(File file, String loadGeneratorGroup, String nodeGroup) {
+    private static final Logger LOGGER = Logger.getLogger(Registry.class);
+
+
+    public static Registry loadInventoryYaml(File file, String loadGeneratorHosts, String nodeHosts) {
+        if(nodeHosts == null){
+            throw new NullPointerException();
+        }
+
+        LOGGER.info("--loadGeneratorHosts: "+loadGeneratorHosts);
+        LOGGER.info("--nodeHosts: "+nodeHosts);
+
         Registry registry = new Registry();
-        List<AgentData> nodes = loadAgents(registry, nodeGroup);
-        List<AgentData> loadGenerators = loadAgents(registry, loadGeneratorGroup);
+        List<AgentData> nodes = loadAgents(registry, nodeHosts);
+        List<AgentData> loadGenerators = loadAgents(registry, loadGeneratorHosts);
 
         for (AgentData agentData : registry.getAgents()) {
             boolean isNode = nodes.contains(agentData);
@@ -366,14 +377,14 @@ public class Registry {
         return registry;
     }
 
-    private static List<AgentData> loadAgents(Registry registry, String nodeGroup) {
+    private static List<AgentData> loadAgents(Registry registry, String nodeHosts) {
         List<AgentData> agents = new ArrayList<>();
-        if (nodeGroup == null) {
+        if (nodeHosts == null) {
             return agents;
         }
 
         String out = new BashCommand(locatePythonFile("load_hosts.py"))
-                .addParams(nodeGroup)
+                .addParams(nodeHosts)
                 .execute();
 
         Yaml yaml = new Yaml();

@@ -206,9 +206,9 @@ def changepoint_detection(ts):
     return result
 
 
-class PerfAnalysisCli:
+class PerfRegressionAnalysisCli:
 
-    def __init__(self):
+    def __init__(self, argv):
         os.path.expanduser('~/your_directory')
 
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -221,7 +221,7 @@ class PerfAnalysisCli:
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
 
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
         git_dir = validate_dir(args.git_dir[0])
         latest = args.latest[0]
         dir = validate_dir(args.dir[0])
@@ -247,4 +247,4 @@ class PerfAnalysisCli:
 
 
 if __name__ == '__main__':
-    PerfAnalysisCli()
+    PerfRegressionAnalysisCli()

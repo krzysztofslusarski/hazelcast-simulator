@@ -193,3 +193,23 @@ def shell(cmd, shell=True, split=False, use_print=False):
                     print(line)
                 else:
                     log(line, log_level)
+
+
+def parse_tag(s):
+    items = s.split('=')
+    key = items[0].strip()  # we remove blanks around keys, as is logical
+    value = None
+    if len(items) > 1:
+        # rejoin the rest:
+        value = '='.join(items[1:])
+    return (key, value)
+
+
+def parse_tags(items):
+    d = {}
+    if items:
+        flat_list = [item for sublist in items for item in sublist]
+        for item in flat_list:
+            key, value = parse_tag(item)
+            d[key] = value
+    return d

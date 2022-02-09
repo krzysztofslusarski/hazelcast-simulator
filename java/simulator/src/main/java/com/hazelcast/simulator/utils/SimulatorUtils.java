@@ -47,10 +47,10 @@ public final class SimulatorUtils {
         return loadComponentRegister(agentsFile, null, null);
     }
 
-    public static Registry loadComponentRegister(File agentsFile, String loadGeneratorGroup, String nodeGroup){
+    public static Registry loadComponentRegister(File agentsFile, String loadGeneratorHosts, String nodeHosts){
         ensureExistingFile(agentsFile);
 
-        return  Registry.loadInventoryYaml(agentsFile, loadGeneratorGroup, nodeGroup);
+        return  Registry.loadInventoryYaml(agentsFile, loadGeneratorHosts, nodeHosts);
     }
 
     public static SimulatorProperties loadSimulatorProperties() {

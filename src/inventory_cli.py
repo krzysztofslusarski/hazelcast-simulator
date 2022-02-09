@@ -117,16 +117,16 @@ class InventoryInstallCli:
             print('Unrecognized command', parser.print_help())
             exit(1)
 
-        getattr(self, args.command)()
+        getattr(self, args.command)(sys.argv[3:])
 
-    def java(self):
+    def java(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Install Java')
         parser.add_argument("--url", help="The url of the JDK tar.gz file", default=default_url)
         parser.add_argument("--examples", help="Shows example urls", action='store_true')
         parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
-        args = parser.parse_args(sys.argv[3:])
+        args = parser.parse_args(argv)
 
         if args.examples:
             print(examples)
@@ -145,13 +145,13 @@ class InventoryInstallCli:
             exit_with_error(f'Failed to install Java, exitcode={exitcode} command=[{cmd}])')
         log_header("Installing Java: Done")
 
-    def async_profiler(self):
+    def async_profiler(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Install Async Profiler')
         parser.add_argument("--version", help="Async profiler version", default="2.6")
         parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
-        args = parser.parse_args(sys.argv[3:])
+        args = parser.parse_args(argv)
 
         hosts = args.hosts
         version = args.version
@@ -165,12 +165,12 @@ class InventoryInstallCli:
             exit_with_error(f'Failed to install Perf, exitcode={exitcode} command=[{cmd}])')
         log_header("Installing Async Profiler: Done")
 
-    def perf(self):
+    def perf(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Install Linux Perf')
         parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
 
-        args = parser.parse_args(sys.argv[3:])
+        args = parser.parse_args(argv)
 
         hosts = args.hosts
         log_header("Installing Perf")
@@ -181,11 +181,11 @@ class InventoryInstallCli:
             exit_with_error(f'Failed to install Perf, exitcode={exitcode} command=[{cmd}])')
         log_header("Installing Perf: Done")
 
-    def simulator(self):
+    def simulator(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Install Simulator')
         parser.add_argument("--hosts", help="The target hosts.", default="all:!mc")
-        args = parser.parse_args(sys.argv[3:])
+        args = parser.parse_args(argv)
 
         hosts = args.hosts
 
@@ -200,10 +200,10 @@ class InventoryInstallCli:
 
 
 class InventoryImportCli:
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Imports the inventory from a terraform installation.')
-        parser.parse_args(sys.argv[2:])
+        parser.parse_args(argv)
 
         log_header("Inventory import")
 
@@ -222,13 +222,13 @@ class InventoryImportCli:
 
 
 class InventoryApplyCli:
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Creates the inventory')
         parser.add_argument("-f", "--force",
                             help="Forces the destruction of the inventory (even when inventory.yaml doesn't exist)",
                             action='store_true')
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
 
         log_header("Inventory apply")
 
@@ -251,13 +251,13 @@ class InventoryApplyCli:
 
 
 class InventoryDestroyCli:
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Destroys the inventory')
         parser.add_argument("-f", "--force",
                             help="Forces the destruction of the inventory (even when inventory.yaml doesn't exist)",
                             action='store_true')
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
 
         log_header("Inventory destroy")
 
@@ -282,14 +282,14 @@ class InventoryDestroyCli:
 
 
 class InventoryShellCli:
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Executes a shell command on the inventory', )
         parser.add_argument("command", help="The command to execute", nargs='?')
         parser.add_argument("--hosts", help="The target hosts.", default="all")
         parser.add_argument('-p', "--ping", help="Checks if the inventory is reachable", action='store_true')
 
-        args = parser.parse_args(sys.argv[2:])
+        args = parser.parse_args(argv)
 
         hosts = args.hosts
 
@@ -338,23 +338,23 @@ class InventoryCli:
             exit(1)
 
         if args.command == "import":
-            self.import_inventory()
+            self.import_inventory(sys.argv[2:])
         else:
-            getattr(self, args.command)()
+            getattr(self, args.command)(sys.argv[2:])
 
-    def import_inventory(self):
-        InventoryImportCli()
+    def import_inventory(self, argv):
+        InventoryImportCli(argv)
 
-    def apply(self):
-        InventoryApplyCli()
+    def apply(self, argv):
+        InventoryApplyCli(argv)
 
-    def shell(self):
-        InventoryShellCli()
+    def shell(self, argv):
+        InventoryShellCli(argv)
 
-    def destroy(self):
-        InventoryDestroyCli()
+    def destroy(self, argv):
+        InventoryDestroyCli(argv)
 
-    def install(self):
+    def install(self, argv):
         InventoryInstallCli()
 
 

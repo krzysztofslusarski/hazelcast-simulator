@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from pathlib import Path
 
 import yaml
 import sys
@@ -14,7 +13,6 @@ agents_yaml = yaml.safe_load(sys.argv[3])
 
 def __agent_download(agent):
     print(f"[INFO]     {public_ip(agent)} Download")
-    print(f"[INFO]     {agent} Download")
 
     if run_id == "*":
         download_path = f"hazelcast-simulator/workers/"
@@ -23,7 +21,6 @@ def __agent_download(agent):
 
     # copy the files
     # we exclude the uploads directory because it could be very big e.g jars
-    root_dir = Path(run_path).parent
     shell(f"""rsync --copy-links -avvz --compress-level=9 -e "ssh {ssh_options(agent)}" --exclude 'upload' {ssh_user(agent)}@{public_ip(agent)}:{download_path} {run_path}""")
 
     # # delete the files on the agent (no point in keeping them around if they are already copied locally)

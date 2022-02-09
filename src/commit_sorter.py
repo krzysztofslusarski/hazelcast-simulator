@@ -26,9 +26,9 @@ def order(commits, git_dir):
         return result
 
 
-class OrderCommitsCli:
+class CommitSorterCli:
 
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             description='Returns an ordered list (from old to new) of commits')
@@ -36,7 +36,7 @@ class OrderCommitsCli:
         parser.add_argument("-g", "--git-dir", metavar='git_dir', help="the directory containing the git repo", nargs=1,
                             default=[f"{os.getcwd()}/.git"])
         parser.add_argument("-d", "--debug", help="print the commits including timestamp", action='store_true')
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
         git_dir = validate_dir(args.git_dir[0])
         commits = args.commits
         ordered = order(commits, git_dir)
@@ -50,5 +50,3 @@ class OrderCommitsCli:
                 print(commit)
 
 
-if __name__ == '__main__':
-    OrderCommitsCli()

@@ -1,15 +1,14 @@
-#!/usr/bin/python3
-import os
-import subprocess
 import argparse
+import os
 import random
+import subprocess
 
 from simulator.util import validate_dir
 
 
 class CommitSamplerCli:
 
-    def __init__(self):
+    def __init__(self, argv):
         parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             description='Returns a randomly ordered set of sample commits between the first/last commit')
@@ -22,7 +21,7 @@ class CommitSamplerCli:
         parser.add_argument("-i", "--inclusive", help="Include the first and last commit.", action='store_true')
         parser.add_argument("-g", "--git-dir", metavar='git_dir', help="The directory containing the git repo.",
             nargs=1, default=[f"{os.getcwd()}/.git"])
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
 
         first = args.first[0]
         last = args.last[0]
@@ -59,6 +58,3 @@ class CommitSamplerCli:
         samples = [commit[0:hash_length] for commit in samples]
         print(" ".join(samples))
 
-
-if __name__ == '__main__':
-    CommitSamplerCli()
