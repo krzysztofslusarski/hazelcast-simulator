@@ -123,15 +123,6 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
             template.addReplacement("<!--LICENSE-KEY-->", format("<license-key>%s</license-key>", licenseKey));
         }
 
-        String manCenterURL = get("MANAGEMENT_CENTER_URL");
-        if (!"none".equals(manCenterURL) && (manCenterURL.startsWith("http://") || manCenterURL.startsWith("https://"))) {
-            String updateInterval = get("MANAGEMENT_CENTER_UPDATE_INTERVAL");
-            String updateIntervalAttr = (updateInterval.isEmpty()) ? "" : " update-interval=\"" + updateInterval + '"';
-            template.addReplacement("<!--MANAGEMENT_CENTER_CONFIG-->",
-                    format("<management-center enabled=\"true\"%s>%n        %s%n" + "    </management-center>%n",
-                            updateIntervalAttr, manCenterURL));
-        }
-
         if (liteMember) {
             template.addReplacement("<!--LITE_MEMBER_CONFIG-->", "<lite-member enabled=\"true\"/>");
         }
