@@ -23,7 +23,6 @@ import com.hazelcast.simulator.coordinator.registry.AgentData.AgentWorkerMode;
 import com.hazelcast.simulator.protocol.core.SimulatorAddress;
 import com.hazelcast.simulator.utils.BashCommand;
 import com.hazelcast.simulator.utils.CommandLineExitException;
-import org.apache.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -346,16 +345,10 @@ public class Registry {
         return tests.get(testId);
     }
 
-    private static final Logger LOGGER = Logger.getLogger(Registry.class);
-
-
     public static Registry loadInventoryYaml(File file, String loadGeneratorHosts, String nodeHosts) {
-        if(nodeHosts == null){
+        if (nodeHosts == null) {
             throw new NullPointerException();
         }
-
-        LOGGER.info("--loadGeneratorHosts: "+loadGeneratorHosts);
-        LOGGER.info("--nodeHosts: "+nodeHosts);
 
         Registry registry = new Registry();
         List<AgentData> nodes = loadAgents(registry, nodeHosts);

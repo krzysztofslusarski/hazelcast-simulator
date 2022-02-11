@@ -27,7 +27,7 @@ inventory_path = 'inventory.yaml'
 
 class PerfTest:
 
-    def __init__(self, logfile=None, log_shell_command=False):
+    def __init__(self, logfile=None, log_shell_command=True):
         self.logfile = logfile
         self.log_shell_command = log_shell_command
         pass
@@ -159,6 +159,7 @@ class PerfTest:
             performance_monitor_interval_seconds=test.get('performance_monitor_interval_seconds'),
             node_hosts=test.get('node_hosts'),
             loadgenerator_hosts=test.get('loadgenerator_hosts'),
+            license_key=test.get('license_key'),
             client_args=test.get('client_args'),
             member_args=test.get('member_args'),
             members=test['members'],

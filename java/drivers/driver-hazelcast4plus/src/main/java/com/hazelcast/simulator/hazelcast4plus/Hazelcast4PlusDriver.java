@@ -17,7 +17,9 @@ package com.hazelcast.simulator.hazelcast4plus;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -26,8 +28,8 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.simulator.agent.workerprocess.WorkerParameters;
 import com.hazelcast.simulator.coordinator.ConfigFileTemplate;
 import com.hazelcast.simulator.coordinator.registry.AgentData;
-import com.hazelcast.simulator.utils.BashCommand;
 import com.hazelcast.simulator.drivers.Driver;
+import com.hazelcast.simulator.utils.BashCommand;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -197,7 +199,7 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
         LOGGER.info("Installing '" + driver + "' version '" + versionSpec + "' on Agents using " + installFile);
 
         new BashCommand(installFile)
-                .addParams(AgentData.toYaml(agents), versionSpec)
+                .addParams(AgentData.toYaml(agents), versionSpec, driver)
                 .addEnvironment(properties)
                 .execute();
 
@@ -207,7 +209,7 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
     }
 
     @Override
-    public void startDriverInstance() {
+    public void startDriverInstance() throws IOException {
         String workerType = get("WORKER_TYPE");
 
         LOGGER.info(BuildInfoProvider.getBuildInfo());
@@ -215,14 +217,33 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
         LOGGER.info(format("%s HazelcastInstance starting", workerType));
         if ("javaclient".equals(workerType)) {
             File configFile = new File(getUserDir(), "client-hazelcast.xml");
-            System.setProperty("hazelcast.client.config", configFile.getAbsolutePath());
-            ClientConfig config = ClientConfig.load();
-            hazelcastInstance = HazelcastClient.newHazelcastClient(config);
+
+            try {
+                // this way of loading is preferred so that env-variables and sys properties are picked up
+                System.setProperty("hazelcast.client.config", configFile.getAbsolutePath());
+                ClientConfig config = ClientConfig.load();
+                hazelcastInstance = HazelcastClient.newHazelcastClient(config);
+            } catch (NoSuchMethodError e) {
+                // Fall back in case ClientConfig.load doesn't exist (pre 4.2)
+                LOGGER.warn("Defaulting to old XmlClientConfigBuilder style config loading");
+                XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(configFile);
+                ClientConfig clientConfig = configBuilder.build();
+                hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
+            }
         } else {
             File configFile = new File(getUserDir(), "hazelcast.xml");
-            System.setProperty("hazelcast.config", configFile.getAbsolutePath());
-            Config config = Config.load();
-            hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+            try {
+                // this way of loading is preferred so that env-variables and sys properties are picked up
+                System.setProperty("hazelcast.config", configFile.getAbsolutePath());
+                Config config = Config.load();
+                hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+            } catch (NoSuchMethodError e) {
+                // Fall back in case Config.load doesn't exist (pre 4.2)
+                LOGGER.warn("Fail back to old XmlConfigBuilder style config loading");
+                XmlConfigBuilder configBuilder = new XmlConfigBuilder(configFile.getAbsolutePath());
+                Config config = configBuilder.build();
+                hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+            }
         }
         LOGGER.info(format("%s HazelcastInstance started", workerType));
         warmupPartitions(hazelcastInstance);
