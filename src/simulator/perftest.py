@@ -357,8 +357,13 @@ class PerftestRunCli:
                                          description='Runs a tests.yaml which is a self contained set of tests')
         parser.add_argument('file', nargs='?', help='The tests file', default=default_tests_path)
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
+        # parser.add_argument('--runPath',
+        #                     nargs=1,
+        #                     help="The path where the result of the run need to be stored.")
+
         args = parser.parse_args(argv)
         tags = parse_tags(args.tag)
+        #run_path = args.runPath
 
         tests = load_yaml_file(args.file)
         perftest = PerfTest()

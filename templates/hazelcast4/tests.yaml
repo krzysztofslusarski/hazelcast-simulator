@@ -1,12 +1,14 @@
 - name: read_only
   repetitions: 1
-  duration: 30s
+  duration: 300s
   clients: 1
   members: 1
+  loadgenerator_hosts: loadgenerators
+  node_hosts: nodes
   driver: hazelcast5
   version: maven=5.0
-  client_args:
-  member_args:
+  client_args: -Xms3g -Xmx3g
+  member_args: -Xms3g -Xmx3g
   performance_monitor_interval_seconds: 1
   verify_enabled: True
   test:
@@ -17,14 +19,16 @@
       keyCount: 1_000_000
 
 - name: write_only
-  duration: 30s
-  repetitions: 0
+  duration: 300s
+  repetitions: 1
   clients: 1
   members: 1
   driver: hazelcast5
   version: maven=5.0
-  client_args:
-  member_args:
+  client_args: -Xms3g -Xmx3g
+  member_args: -Xms3g -Xmx3g
+  loadgenerator_hosts: loadgenerators
+  node_hosts: nodes
   verify_enabled: False
   performance_monitor_interval_seconds: 1
   test:

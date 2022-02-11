@@ -26,7 +26,7 @@ def order(commits, git_dir):
         return result
 
 
-class CommitSorterCli:
+class CommitOrderCli:
 
     def __init__(self, argv):
         parser = argparse.ArgumentParser(

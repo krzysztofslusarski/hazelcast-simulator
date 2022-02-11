@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
-from simulator.util import load_yaml_file, validate_git_dir, validate_dir, exit_with_error, mkdir
+import commit_sorter
+from simulator.util import load_yaml_file, validate_dir, mkdir
 
 
 class TimeSeries:
@@ -44,7 +45,7 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, filename, cps=None, aps=None, ymin=0):
+def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900):
     if cps and aps:
         plt.title(f"Changepoints and anomalies: {ts.name}")
     elif cps:
@@ -55,7 +56,7 @@ def plot(ts, filename, cps=None, aps=None, ymin=0):
         plt.title(f"{ts.name}")
 
     my_dpi = 96
-    plt.figure(figsize=(1600 / my_dpi, 900 / my_dpi), dpi=my_dpi)
+    plt.figure(figsize=(width / my_dpi, height / my_dpi), dpi=my_dpi)
     plt.xticks(rotation=90)
     plt.grid()
     plt.xlabel(ts.x_label)
@@ -156,7 +157,7 @@ def pick_best_value(values):
     return best
 
 
-def get_ordered_commits(dir, git_dir):
+def ordered_commits(dir, git_dir):
     commits = []
     for file in os.listdir(dir):
         if os.path.isdir(f"{dir}/{file}"):
@@ -164,17 +165,16 @@ def get_ordered_commits(dir, git_dir):
             commits.append(filename)
 
     if not commits:
-        exit_with_error(f"No commits found in directory [dir]")
+        return []
 
-    cmd = f"order_commits --git-dir {git_dir} {' '.join(commits)}"
-    ordered_commits = subprocess.check_output(cmd, shell=True, text=True).splitlines()
-    return ordered_commits
+    print(git_dir)
+    return commit_sorter.order(commits, git_dir)
 
 
 def load_timeseries(dir, git_dir):
     y_map = {}
     x_map = {}
-    for commit in get_ordered_commits(dir, git_dir):
+    for commit in ordered_commits(dir, git_dir):
         result = load_commit_dir(dir, commit)
 
         for metric_name, values in result.items():
@@ -209,21 +209,23 @@ def changepoint_detection(ts):
 class PerfRegressionAnalysisCli:
 
     def __init__(self, argv):
-        os.path.expanduser('~/your_directory')
-
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Does performance analysis')
-        parser.add_argument("dir", help="The directory containing the commit hashes", nargs=1)
+        parser.add_argument("dir", help="The directory containing the results (per commit hash)", nargs=1)
         parser.add_argument("-g", "--git-dir", metavar='git_dir', help="The directory containing the git repo", nargs=1,
                             default=[f"{os.getcwd()}/.git"])
         parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
         parser.add_argument("-z", "--zero", help="Plot from zero", action='store_true')
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
+        parser.add_argument("--width", nargs=1, help="The width of the images", type=int, default=1600)
+        parser.add_argument("--height", nargs=1, help="The height of the images", type=int, default=900)
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
 
         args = parser.parse_args(argv)
         git_dir = validate_dir(args.git_dir[0])
         latest = args.latest[0]
+        width = args.width
+        height = args.height
         dir = validate_dir(args.dir[0])
         output = mkdir(args.output[0])
 
@@ -243,8 +245,4 @@ class PerfRegressionAnalysisCli:
 
             filename = f"{output}/{metric}.png"
             print(filename)
-            plot(ts, filename, cps=cps, aps=aps, ymin=ymin)
-
-
-if __name__ == '__main__':
-    PerfRegressionAnalysisCli()
+            plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=width, height=height)

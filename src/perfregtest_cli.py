@@ -1,12 +1,13 @@
 #!/usr/bin/python3
 import argparse
+import os
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 import simulator.log
 from commit_sampler import CommitSamplerCli
-from commit_sorter import CommitSorterCli
+from commit_sorter import CommitOrderCli
 from perf_analysis_cli import PerfRegressionAnalysisCli
 from simulator.log import info
 from simulator.perftest import PerfTest
@@ -18,10 +19,10 @@ logfile_name = "run.log"
 usage = '''perfregtest <command> [<args>]
 
 The available commands are:
-    run                 Runs performance regression tests
-    analyze             Analyzes the results of performance regression tests
+    run                 Runs performance regression tests.
+    analyze             Analyzes the results of performance regression tests..
     commit_sampler      Retrieves a sample of commits between a start and end commit.
-    commit_sorter       Returns an ordered list (from old to new) of commits
+    commit_order        Returns an ordered list (from old to new) of commits.
 '''
 
 
@@ -38,7 +39,8 @@ def build(commit, path):
     exitcode = shell_logged(f"""
         set -e
         cd {path}
-        git pull origin master
+        git fetch --all --tags
+        git reset --hard
         git checkout {commit}
         mvn clean install -DskipTests -Dquick
     """, log_file=logfile_name)
@@ -105,16 +107,15 @@ class PerfRegTestRunCli:
                                          description='Runs performance regression tests based on a series of commits')
         parser.add_argument("path", nargs=1, help="The path of the project to build")
         parser.add_argument("commits", nargs="+", help="The commits to build")
-        parser.add_argument('--tests', nargs='?', help='The tests file', default=default_tests_path)
+        parser.add_argument('--tests', nargs=1, help='The tests file', default=[default_tests_path])
         parser.add_argument("-r", "--runs", nargs=1, help="The number of runs per commit",
-                            default=3)
+                            default=[3], type=int)
 
         args = parser.parse_args(argv)
         commits = args.commits
-        runs = args.runs
-
+        runs = args.runs[0]
         path = validate_dir(args.path[0])
-        tests = load_yaml_file(args.tests)
+        tests = load_yaml_file(args.tests[0])
 
         run_all(commits, runs, path, tests)
 
@@ -140,11 +141,12 @@ class PerfRegtestCli:
         CommitSamplerCli(argv)
 
     def commit_sorter(self, argv):
-        CommitSorterCli(argv)
+        CommitOrderCli(argv)
 
     def analyze(self, argv):
         PerfRegressionAnalysisCli(argv)
 
 
 if __name__ == '__main__':
+    os.path.expanduser('~/your_directory')
     PerfRegtestCli()

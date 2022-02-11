@@ -55,11 +55,18 @@
             <version>${project.version}</version>
         </dependency>
 
-
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
             <version>${lettuce.version}</version>
+        </dependency>
+
+        <!-- already provided by simulator -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.21</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

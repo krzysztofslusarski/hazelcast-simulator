@@ -44,7 +44,7 @@ public final class ReportCsv {
         outSb.append(",").append(stripExtension(hgrmFile.getName()));
         addPercentiles(hgrmFile, outSb);
         addOther(hgrmFile, outSb);
-        appendText(outSb.toString() + "\n", out);
+        appendText(outSb + "\n", out);
     }
 
     private static void addPercentiles(File hgrmFile, StringBuffer outSb) {
@@ -52,18 +52,24 @@ public final class ReportCsv {
         Queue<String> importantPercentiles = new LinkedList<>(asList("0.1", "0.2", "0.5", "0.75", "0.90", "0.95",
                 "0.99", "0.999", "0.9999", "1.00"));
 
+        int remaining = importantPercentiles.size();
         String percentile = importantPercentiles.poll();
         for (int k = 4; k < lines.length - 3; k++) {
             String line = lines[k].trim();
             String[] tokens = line.split("\\s+");
             String token = tokens[1];
             if (token.startsWith(percentile)) {
+                remaining--;
                 outSb.append(',').append(tokens[0]);
                 percentile = importantPercentiles.poll();
                 if (percentile == null) {
                     break;
                 }
             }
+        }
+
+        for (int k = 0; k < remaining; k++) {
+            outSb.append(',').append(-1);
         }
     }
 

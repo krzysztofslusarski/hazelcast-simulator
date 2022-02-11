@@ -23,6 +23,9 @@
         <property name="hazelcast.phone.home.enabled">false</property>
     </properties>
 
+    <jet enabled="true" resource-upload-enabled="true">
+    </jet>
+
     <!--LICENSE-KEY-->
 
     <!--MANAGEMENT_CENTER_CONFIG-->

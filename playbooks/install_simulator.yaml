@@ -6,6 +6,18 @@
     - simulator_dir: ~{{ console_user | default(ansible_user) }}/hazelcast-simulator
   tasks:
 
+  - name: yum update/apt-get update
+    shell: |
+      yum update || true
+      apt-get update || true
+    become: yes
+
+  - name: Install dstat
+    ansible.builtin.package:
+      name: dstat
+      state: present
+    become: yes
+
   - name: Delete simulator directory
     file:
       state: absent

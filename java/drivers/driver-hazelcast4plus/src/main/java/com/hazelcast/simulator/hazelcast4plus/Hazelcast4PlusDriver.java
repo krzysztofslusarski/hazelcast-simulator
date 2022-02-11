@@ -17,9 +17,7 @@ package com.hazelcast.simulator.hazelcast4plus;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -40,8 +38,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.simulator.utils.CommonUtils.sleepMillisThrowException;
-import static com.hazelcast.simulator.utils.FileUtils.getConfigurationFile;
 import static com.hazelcast.simulator.utils.FileUtils.getUserDir;
+import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 import static java.lang.String.format;
 
 public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
@@ -190,34 +188,16 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
 
     @Override
     public void install() {
-        String cloud = get("CLOUD_PROVIDER");
-        if ("embedded".equals(cloud)) {
-            return;
-        }
-
         String versionSpec = get("VERSION_SPEC");
         LOGGER.info("Installing versionSpec [" + versionSpec + "] on " + agents.size() + " agents...");
 
-        String publicIps = "";
-        if (!"local".equals(cloud)) {
-            publicIps = AgentData.publicAddressesString(agents);
-        }
-
+        String installFile = locatePythonFile("upload_hazelcast_jars.py");
         String driver = get("DRIVER");
-        String driverInstallScript = null;
-        if (driver.contains("enterprise")) {
-            driverInstallScript = "install-hazelcast-enterprise4plus.sh";
-        } else {
-            driverInstallScript = "install-hazelcast4plus.sh";
-        }
-
-
-        String installFile = getConfigurationFile(driverInstallScript, driver).getPath();
 
         LOGGER.info("Installing '" + driver + "' version '" + versionSpec + "' on Agents using " + installFile);
 
         new BashCommand(installFile)
-                .addParams(get("RUN_ID"), versionSpec, publicIps)
+                .addParams(AgentData.toYaml(agents), versionSpec)
                 .addEnvironment(properties)
                 .execute();
 
@@ -227,7 +207,7 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
     }
 
     @Override
-    public void startDriverInstance() throws Exception {
+    public void startDriverInstance() {
         String workerType = get("WORKER_TYPE");
 
         LOGGER.info(BuildInfoProvider.getBuildInfo());
@@ -235,13 +215,13 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
         LOGGER.info(format("%s HazelcastInstance starting", workerType));
         if ("javaclient".equals(workerType)) {
             File configFile = new File(getUserDir(), "client-hazelcast.xml");
-            XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(configFile);
-            ClientConfig clientConfig = configBuilder.build();
-            hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
+            System.setProperty("hazelcast.client.config", configFile.getAbsolutePath());
+            ClientConfig config = ClientConfig.load();
+            hazelcastInstance = HazelcastClient.newHazelcastClient(config);
         } else {
             File configFile = new File(getUserDir(), "hazelcast.xml");
-            XmlConfigBuilder configBuilder = new XmlConfigBuilder(configFile.getAbsolutePath());
-            Config config = configBuilder.build();
+            System.setProperty("hazelcast.config", configFile.getAbsolutePath());
+            Config config = Config.load();
             hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         }
         LOGGER.info(format("%s HazelcastInstance started", workerType));

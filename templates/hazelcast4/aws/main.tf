@@ -275,10 +275,10 @@ resource "aws_instance" "mc" {
 
     provisioner "remote-exec" {
         inline = [
+            "wget -q https://repository.hazelcast.com/download/management-center/hazelcast-management-center-5.0.tar.gz",
+            "tar -xzvf hazelcast-management-center-5.0.tar.gz",
+            "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
             "sudo apt-get -y update",
-            "sudo apt-get -y install unzip",
-            "wget -q https://repository.hazelcast.com/download/management-center/hazelcast-management-center-5.0.zip",
-            "unzip hazelcast-management-center-5.0.zip",
             "sudo apt-get -y install openjdk-11-jdk",
             "nohup hazelcast-management-center-5.0/bin/start.sh  > mc.out 2>&1 &",
             "sleep 2"

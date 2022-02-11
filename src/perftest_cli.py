@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 import sys
 import argparse
 
@@ -63,4 +64,5 @@ class PerftestCli:
 
 
 if __name__ == '__main__':
+    os.path.expanduser('~/your_directory')
     PerftestCli()

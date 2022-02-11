@@ -1043,11 +1043,15 @@ class HTMLReport:
         self.report = self.report + '</div>'
         self.report = self.report + '<div class="images-block">' + self.images + '</div>'
         self.report = self.report + '<table><tbody>'
-        for i in range(len(csvContents[0].split(','))):
-            self.report = self.report + '<tr>'
-            for j in range(len(csvContents)):
-                self.report = self.report + '<td>' + csvContents[j].split(',')[i].replace('"', '') + '</td>'
-            self.report = self.report + '</tr>'
+        try:
+            for i in range(len(csvContents[0].split(','))):
+                self.report = self.report + '<tr>'
+                for j in range(len(csvContents)):
+                    self.report = self.report + '<td>' + csvContents[j].split(',')[i].replace('"', '') + '</td>'
+                self.report = self.report + '</tr>'
+        except IndexError:
+            # We need on this problem in the future.
+            pass
         self.report = self.report + '</table></tbody>'
         self.report = self.report + '<script>'
         self.report = self.report + "var activeTab = 'throughput'; var throughputdom = document.getElementById('throughput'); var latencydom = document.getElementById('latency');  var dstatdom = document.getElementById('dstat'); var csvdom = document.getElementById('csv'); var imageContainer = document.getElementsByClassName('image-container'); var tabledom = document.getElementsByTagName('table')[0]; "
