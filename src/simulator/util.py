@@ -2,12 +2,11 @@ import os.path
 import shutil
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor
 from os import path
 
 from subprocess import Popen, PIPE
 from selectors import EVENT_READ, DefaultSelector
-from threading import Thread
-from threading import Lock, Condition
 import pkg_resources
 import yaml
 
@@ -85,73 +84,15 @@ def load_yaml_file(path):
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
-# Copied
-class Future:
+def run_parallel(target, args_list, max_workers=8):
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
 
-    def __init__(self):
-        self.__ready = Condition(Lock())
-        self.__val = None
-        self.__completed = False
+        for args in args_list:
+            futures.append(executor.submit(target, *args))
 
-    def get(self):
-        with self.__ready:
-            while not self.__completed:
-                self.__ready.wait()
-
-            if isinstance(self.__val, Exception):
-                raise Exception() from self.__val
-            return self.__val
-
-    def join(self):
-        self.get()
-
-    def complete(self, val):
-        with self.__ready:
-            if self.__completed:
-                raise RuntimeError("Future has already been completed")
-            self.__val = val
-            self.__completed = True
-            self.__ready.notify_all()
-
-    def done(self):
-        return self.__completed
-
-
-# Copied
-class Worker(Thread):
-
-    def __init__(self, target, args):
-        super().__init__(target=target, args=args)
-        self.future = Future()
-        self.exception = None
-
-    def run(self):
-        try:
-            super().run()
-            self.future.complete(True)
-        except Exception as e:
-            self.exception = e
-            self.future.complete(e)
-
-
-# Copied
-def run_parallel(target, args_list, ignore_errors=False):
-    workers = []
-    for args in args_list:
-        worker = Worker(target, args)
-        worker.start()
-        workers.append(worker)
-
-    for worker in workers:
-        worker.join()
-        if not ignore_errors and worker.exception:
-            raise Exception(f"Failed to execute {target} {args_list}") from worker.exception
-
-
-# Copied
-def join_all(*futures):
-    for f in futures:
-        f.join()
+        for f in futures:
+            f.result()
 
 
 def exit_with_error(text):
@@ -195,7 +136,7 @@ def shell(cmd, shell=True, split=False, use_print=False):
 
 def parse_tag(s):
     items = s.split('=')
-    key = items[0].strip()  # we remove blanks around keys, as is logical
+    key = items[0].strip()
     value = None
     if len(items) > 1:
         # rejoin the rest:

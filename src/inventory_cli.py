@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import os
+
 import sys
 import argparse
 from os import path
@@ -96,19 +96,19 @@ Bellsoft:
 """
 
 
-usage = '''install <command> [<args>]
-
-The available commands are:
-    java            Installs Java
-    simulator       Installs Simulator
-    perf            Installs Linux Perf
-    async_profiler  Installs Async Profiler
-'''
-
 
 class InventoryInstallCli:
 
     def __init__(self, argv):
+        usage = '''install <command> [<args>]
+
+        The available commands are:
+            java            Installs Java
+            simulator       Installs Simulator
+            perf            Installs Linux Perf
+            async_profiler  Installs Async Profiler
+        '''
+
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Installs software', usage=usage)
         parser.add_argument('command', help='Subcommand to run')
@@ -334,6 +334,7 @@ class InventoryCli:
         parser.add_argument('command', help='Subcommand to run')
 
         args = parser.parse_args(sys.argv[1:2])
+
         if not hasattr(self, args.command) and args.command != "import":
             print('Unrecognized command', parser.print_help())
             exit(1)
@@ -360,5 +361,5 @@ class InventoryCli:
 
 
 if __name__ == '__main__':
-    os.path.expanduser('~/your_directory')
+    #os.path.expanduser('~/your_directory')
     InventoryCli()

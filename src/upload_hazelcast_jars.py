@@ -13,7 +13,7 @@ def __upload(agent, artifact_ids, version):
     print(f"[INFO]     {public_ip(agent)} starting")
     ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec("mkdir -p hazelcast-simulator/driver-lib/")
-    dest = f"hazelcast-simulator/driver-lib/{version}"
+    dest = f"hazelcast-simulator/driver-lib/maven-{version}"
     ssh.exec(f"rm -fr {dest}")
     ssh.exec(f"mkdir -p {dest}")
     for artifact_id in artifact_ids:
@@ -22,13 +22,13 @@ def __upload(agent, artifact_ids, version):
     print(f"[INFO]     {public_ip(agent)} done")
 
 
-def local_repository_path_repo():
+def local_repo():
     cmd = "mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout"
     return subprocess.check_output(cmd, shell=True, text=True)
 
 
 def local_jar_path(artifact_id, version):
-    return f"{local_repository_path_repo}/com/hazelcast/{artifact_id}/{version}/{artifact_id}-{version}.jar"
+    return f"{local_repo}/com/hazelcast/{artifact_id}/{version}/{artifact_id}-{version}.jar"
 
 
 def download(artifact_id, version, repo):
@@ -59,18 +59,20 @@ def artifact_ids(enterprise, version):
         print(f"[ERROR] Unrecognized version {version}")
 
 
-def repo(enteprise):
+def remote_repo(enteprise):
     if not enteprise:
-        snapshot_repo = "https://oss.sonatype.org/content/repositories/snapshots"
-        release_repo = "https://oss.sonatype.org/content/repositories/releases"
+        if version.endswith("-SNAPSHOT"):
+            return "https://oss.sonatype.org/content/repositories/snapshots"
+        else:
+            return "https://oss.sonatype.org/content/repositories/releases"
     else:
-        snapshot_repo = "https://repository.hazelcast.com/snapshot"
-        release_repo = "https://repository.hazelcast.com/release"
+        if version.endswith("-SNAPSHOT"):
+            return "https://repository.hazelcast.com/snapshot"
+        else:
+            return "https://repository.hazelcast.com/release"
 
-    return snapshot_repo if version.endswith("-SNAPSHOT") else release_repo
 
-
-def enterprise(driver):
+def is_enterprise(driver):
     if driver in ['hazelcast3', 'hazelcast4', 'hazelcast5']:
         return False
     elif driver in ['hazelcast-enterprise3', 'hazelcast-enterprise4', 'hazelcast-enterprise5']:
@@ -113,14 +115,14 @@ def force_download(version_spec):
 agents_yaml = yaml.safe_load(sys.argv[1])
 version_spec = sys.argv[2]
 driver = sys.argv[3]
-enterprise = enterprise(driver)
+enterprise = is_enterprise(driver)
 version = version(version_spec)
-repo = repo(enterprise)
+remote_repo = remote_repo(enterprise)
 force_download = force_download(version_spec)
 print(f"[INFO]Force download:{force_download}")
 print(f"[INFO]Uploading Hazelcast jars")
 
-local_repository_path_repo = local_repository_path_repo()
+local_repo = local_repo()
 artifact_ids = artifact_ids(enterprise, version)
 
 for artifact_id in artifact_ids:
@@ -129,7 +131,7 @@ for artifact_id in artifact_ids:
         os.remove(path)
 
     if not os.path.exists(path):
-        download(artifact_id, version, repo)
+        download(artifact_id, version, remote_repo)
 
 for artifact_id in artifact_ids:
     print(f"[INFO]Uploading {artifact_id}")
