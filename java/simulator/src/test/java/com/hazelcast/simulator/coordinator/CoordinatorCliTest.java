@@ -121,14 +121,6 @@ public class CoordinatorCliTest {
         createCoordinatorCli();
     }
 
-    @Test(expected = CommandLineExitException.class)
-    public void testWhenNoTestThenCoordinatorPortEnabled() {
-        File simulatorProperties = new File(getUserDir(), "simulator.properties").getAbsoluteFile();
-        writeText("COORDINATOR_PORT=0", simulatorProperties);
-
-        createCoordinatorCli();
-    }
-
     @Test
     public void testInit_duration() {
         args.add("--duration");
@@ -350,23 +342,23 @@ public class CoordinatorCliTest {
         assertEquals(TestPhase.LOCAL_VERIFY, cli.coordinatorParameters.getLastTestPhaseToSync());
     }
 
-    @Test
-    public void testInit_withLocalSetup() {
-        File simulatorProperties = new File(getUserDir(), "simulator.properties").getAbsoluteFile();
-        writeText("COORDINATOR_PORT=5000\n", simulatorProperties);
-        try {
-            CoordinatorCli cli = createCoordinatorCli();
-
-            Registry registry = cli.registry;
-            assertEquals(1, registry.agentCount());
-
-            AgentData firstAgent = registry.getFirstAgent();
-            assertEquals("localhost", firstAgent.getPublicAddress());
-            assertEquals("localhost", firstAgent.getPrivateAddress());
-        } finally {
-            deleteQuiet(simulatorProperties);
-        }
-    }
+//    @Test
+//    public void testInit_withLocalSetup() {
+//        File simulatorProperties = new File(getUserDir(), "simulator.properties").getAbsoluteFile();
+//        writeText("COORDINATOR_PORT=5000\n", simulatorProperties);
+//        try {
+//            CoordinatorCli cli = createCoordinatorCli();
+//
+//            Registry registry = cli.registry;
+//            assertEquals(1, registry.agentCount());
+//
+//            AgentData firstAgent = registry.getFirstAgent();
+//            assertEquals("localhost", firstAgent.getPublicAddress());
+//            assertEquals("localhost", firstAgent.getPrivateAddress());
+//        } finally {
+//            deleteQuiet(simulatorProperties);
+//        }
+//    }
 
     private CoordinatorCli createCoordinatorCli() {
         return new CoordinatorCli(getArgs());

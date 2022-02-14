@@ -180,10 +180,6 @@ public class SimulatorProperties {
         return parseInt(get("TEST_COMPLETION_TIMEOUT_SECONDS", "300"));
     }
 
-    public int getCoordinatorPort() {
-        return parseInt(get("COORDINATOR_PORT", "0"));
-    }
-
     public int getAgentThreadPoolSize() {
         return parseInt(get("AGENT_THREAD_POOL_SIZE", "0"));
     }

@@ -128,10 +128,6 @@ public class Coordinator implements Closeable {
         } else {
             log("Performance monitor disabled");
         }
-
-        if (properties.getCoordinatorPort() > 0) {
-            log("Coordinator remote enabled on port " + properties.getCoordinatorPort());
-        }
     }
 
     @Override

@@ -9,7 +9,7 @@
     <!--LITE_MEMBER_CONFIG-->
 
     <network>
-        <port port-count="200" auto-increment="true">5701</port>
+        <port port-count="200">5701</port>
 
         <join>
             <multicast enabled="false"/>
@@ -24,8 +24,6 @@
     </properties>
 
     <!--LICENSE-KEY-->
-
-    <!--MANAGEMENT_CENTER_CONFIG-->
 
     <cache name="*">
     </cache>

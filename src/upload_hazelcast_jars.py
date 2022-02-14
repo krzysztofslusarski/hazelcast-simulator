@@ -13,7 +13,7 @@ def __upload(agent, artifact_ids, version):
     print(f"[INFO]     {public_ip(agent)} starting")
     ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec("mkdir -p hazelcast-simulator/driver-lib/")
-    dest = f"hazelcast-simulator/driver-lib/{version_spec.replace('=', '-')}"
+    dest = f"hazelcast-simulator/driver-lib/{version}"
     ssh.exec(f"rm -fr {dest}")
     ssh.exec(f"mkdir -p {dest}")
     for artifact_id in artifact_ids:
@@ -80,12 +80,34 @@ def enterprise(driver):
         exit(1)
 
 
+def parse_version_spec(version_spec):
+    result = {}
+    for s in version_spec.split(';'):
+        index = s.index('=')
+        if not index:
+            print(f"Invalid version spec [{version_spec}], item [{s}] doesn't have format key=value")
+        result[s[0:index].strip()] = s[index + 1:].strip()
+    return result
+
+
 def version(version_spec):
-    if not version_spec.startswith("maven="):
+    parsed_version_spec = parse_version_spec(version_spec)
+
+    version = parsed_version_spec.get('maven')
+    if not version:
         print(f"Unhandled version spec: {version_spec}")
         exit(1)
 
     return version_spec[6:]
+
+
+def force_download(version_spec):
+    parsed_version_spec = parse_version_spec(version_spec)
+    print(f"[INFO]version_spec:{parsed_version_spec}")
+    force_download = parsed_version_spec.get('force_download')
+    if not force_download:
+        return False
+    return "true" == force_download.lower()
 
 
 agents_yaml = yaml.safe_load(sys.argv[1])
@@ -94,14 +116,19 @@ driver = sys.argv[3]
 enterprise = enterprise(driver)
 version = version(version_spec)
 repo = repo(enterprise)
-
+force_download = force_download(version_spec)
+print(f"[INFO]Force download:{force_download}")
 print(f"[INFO]Uploading Hazelcast jars")
 
 local_repository_path_repo = local_repository_path_repo()
 artifact_ids = artifact_ids(enterprise, version)
 
 for artifact_id in artifact_ids:
-    if not os.path.exists(local_jar_path(artifact_id, version)):
+    path = local_jar_path(artifact_id, version)
+    if force_download and os.path.exists(path):
+        os.remove(path)
+
+    if not os.path.exists(path):
         download(artifact_id, version, repo)
 
 for artifact_id in artifact_ids:

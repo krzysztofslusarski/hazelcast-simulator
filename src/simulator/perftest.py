@@ -117,7 +117,7 @@ class PerfTest:
             args = f"{args} --driver {driver}"
 
         if version:
-            args = f"{args} --version {version}"
+            args = f"""{args} --version "{version}"  """
 
         if fail_fast:
             args = f"{args} --failFast {fail_fast}"

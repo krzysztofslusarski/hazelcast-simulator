@@ -87,7 +87,7 @@ public class WorkerProcessLauncher {
 
     private File getRunId() {
         String runId = parameters.get("RUN_ID");
-        System.out.println("runId: "+runId);
+        System.out.println("runId: " + runId);
         System.out.println(parameters);
         File workersDir = ensureExistingDirectory(getSimulatorHome(), "workers");
         return ensureExistingDirectory(workersDir, runId);
@@ -223,13 +223,16 @@ public class WorkerProcessLauncher {
                 + CLASSPATH_SEPARATOR + CLASSPATH;
 
         String driver = parameters.get("DRIVER");
-        if ("hazelcast3".equals(driver) || "hazelcast-enterprise3".equals(driver)) {
+        if ("hazelcast3".equals(driver)
+                || "hazelcast-enterprise3".equals(driver)) {
             String hzVersionDirectory = directoryForVersionSpec(parameters.get("VERSION_SPEC"));
             classpath += CLASSPATH_SEPARATOR + simulatorHome + "/driver-lib/" + hzVersionDirectory + "/*";
             // the common test classes.
             classpath += CLASSPATH_SEPARATOR + simulatorHome + "/drivers/driver-hazelcast3/*";
-        } else if ("hazelcast4".equals(driver) || "hazelcast-enterprise4".equals(driver)
-                || "hazelcast5".equals(driver) || "hazelcast-enterprise5".equals(driver)) {
+        } else if ("hazelcast4".equals(driver)
+                || "hazelcast-enterprise4".equals(driver)
+                || "hazelcast5".equals(driver)
+                || "hazelcast-enterprise5".equals(driver)) {
             String hzVersionDirectory = directoryForVersionSpec(parameters.get("VERSION_SPEC"));
             classpath += CLASSPATH_SEPARATOR + simulatorHome + "/driver-lib/" + hzVersionDirectory + "/*";
             // the common test classes.

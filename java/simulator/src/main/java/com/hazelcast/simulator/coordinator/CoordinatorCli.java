@@ -209,11 +209,7 @@ final class CoordinatorCli {
             this.testSuite = loadTestSuite();
 
             if (testSuite == null) {
-                int coordinatorPort = properties.getCoordinatorPort();
-                if (coordinatorPort == 0) {
-                    throw new CommandLineExitException("Can't run without a testSuite, and not have a coordinator port enabled."
-                            + "Please add COORDINATOR_PORT=5000 to your simulator.properties or run with a testsuite.");
-                }
+                throw new CommandLineExitException("Can't run without a testSuite");
             } else {
                 this.deploymentPlan = newDeploymentPlan();
                 this.runMonolith = new CoordinatorRunMonolith(coordinator, coordinatorParameters);
@@ -227,21 +223,15 @@ final class CoordinatorCli {
             new AgentsDownloadTask(
                     registry,
                     properties.asMap(),
-                    new File(runPath), // broken
+                    new File(runPath),
                     CoordinatorParameters.toSHA1(runPath)).run();
         } else if (options.has(cleanSpec)) {
             new AgentsClearTask(registry).run();
         } else {
             coordinator.start();
-            if (testSuite == null) {
-                int coordinatorPort = coordinatorParameters.getSimulatorProperties().getCoordinatorPort();
-                LOGGER.info("Coordinator started in interactive mode on port " + coordinatorPort + ". "
-                        + "Waiting for commands from the coordinator-remote.");
-            } else {
-                runMonolith.init(deploymentPlan);
-                boolean success = runMonolith.run(testSuite);
-                System.exit(success ? 0 : 1);
-            }
+            runMonolith.init(deploymentPlan);
+            boolean success = runMonolith.run(testSuite);
+            System.exit(success ? 0 : 1);
         }
     }
 
