@@ -18,16 +18,13 @@ bin_dir = os.path.join(simulator_home, "bin")
 
 
 def read(file):
-    f = open(file, 'r')
-    s = f.read()
-    f.close()
-    return s
+    with open(file, 'r') as f:
+        return f.read()
 
 
 def write(file, text):
-    f = open(file, 'w')
-    f.write(text)
-    f.close()
+    with open(file, 'w') as f:
+        return f.write(text)
 
 
 def now_seconds():

@@ -9,7 +9,7 @@ from simulator.util import run_parallel
 def ___agent_ping(agent):
     print(f"[INFO]     {public_ip(agent)}: ping")
     ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
-    ssh.wait()
+    ssh.connect()
     print(f"[INFO]     {public_ip(agent)}: pong")
 
 

@@ -10,6 +10,8 @@ import shutil
 import sys
 from collections import Counter
 import base64
+
+from simulator.log import info, error
 from simulator.util import simulator_home, mkdir
 
 
@@ -94,7 +96,7 @@ class Gnuplot:
                 break
 
         if empty:
-            print("Skipping plot of " + self.title + "; empty time series")
+            info("Skipping plot of " + self.title + "; empty time series")
             self.skipped = True
             return
 
@@ -119,7 +121,7 @@ class Gnuplot:
         self.script_file = open(script_path, "w")
         self._plot()
 
-        print(self.image_path)
+        info(self.image_path)
 
     def _plot(self):
         raise NotImplementedError("Please Implement this method")
@@ -561,7 +563,7 @@ class GcAnalyzer:
             return
 
         cmd = "java -jar " + simulator_home + "/lib/gcviewer-1.35-SNAPSHOT.jar " + gc_log + " " + gc_csv + " -t CSV_FULL"
-        print(cmd)
+        info(cmd)
         with open(os.devnull, 'w') as devnull:
             subprocess.check_call(cmd.split(), stdout=devnull, stderr=devnull)
 
@@ -596,8 +598,6 @@ class DstatAnalyzer:
         for file_name in os.listdir(self.directory):
             if not file_name.endswith("_dstat.csv"):
                 continue
-
-            print("DstatAnalyzer:"+file_name)
 
             agent_name = agent_for_worker(file_name)
             period = self.period
@@ -705,7 +705,6 @@ class DstatAnalyzer:
 
     def __load_dstat(self, column, dstat_csv):
         result = []
-        print("__load_dstat:"+dstat_csv)
         if os.path.exists(dstat_csv):
             with open(dstat_csv) as csvfile:
                 csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -813,7 +812,7 @@ class Benchmark:
 
         # making sure there are workers; otherwise it is an invalid benchmark
         if len(self.workers) == 0:
-            print("Invalid Benchmark " + self.name + " from directory [" + self.src_dir + "]; no workers found")
+            error("Invalid Benchmark " + self.name + " from directory [" + self.src_dir + "]; no workers found")
             exit(1)
 
         self.handles.append(
@@ -840,7 +839,6 @@ class Benchmark:
             if not os.path.isfile(performance_csv_file):
                 continue
 
-            print(performance_csv_file)
             with open(performance_csv_file) as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',', quotechar='|')
                 # skip first line
@@ -867,7 +865,6 @@ class Benchmark:
 
     def init_files(self):
         cmd = simulator_home + "/bin/hidden/init_report_files " + self.src_dir+ " " + report_dir + " " + str(self.id) + " "+ str(self.period.start_millis()) + " " + str(self.period.end_millis())
-        print(cmd)
         out = subprocess.check_output(cmd.split())
         
 # todo: better name
@@ -889,20 +886,20 @@ class Comparison:
         benchmark_names = {}
         last_benchmark = None
 
-        print("Loading benchmarks")
+        info("Loading benchmarks")
 
         # collect all benchmark directories and the names for the benchmarks
         for benchmark_arg in benchmark_args:
             if benchmark_arg.startswith("[") and benchmark_arg.endswith("]"):
                 if not last_benchmark:
-                    print("Benchmark name " + benchmark_arg + " must be preceded with a benchmark directory.")
+                    info("Benchmark name " + benchmark_arg + " must be preceded with a benchmark directory.")
                     exit()
                 benchmark_names[last_benchmark] = benchmark_arg[1:len(benchmark_arg) - 1]
                 last_benchmark = None
             else:
                 benchmark_dir = benchmark_arg
                 if not os.path.exists(benchmark_dir):
-                    print("benchmark directory '" + benchmark_dir + "' does not exist!")
+                    error("benchmark directory '" + benchmark_dir + "' does not exist!")
                     exit(1)
                 last_benchmark = benchmark_arg
                 benchmark_dirs.append(benchmark_dir)
@@ -932,7 +929,7 @@ class Comparison:
         # plot benchmark/machine level metrics
         for benchmark in self.benchmarks:
             if len(benchmark.handles) == 0:
-                print(" benchmark [" + benchmark.name + "] benchmark.dir [" + benchmark.src_dir + "] has no data")
+                error(" benchmark [" + benchmark.name + "] benchmark.dir [" + benchmark.src_dir + "] has no data")
                 exit(1)
 
             for handle in benchmark.handles:
@@ -981,9 +978,9 @@ class Comparison:
             plot.plot()
             htmlReport.addImage(plot)
 
-        print("Done writing report [" + report_dir + "]")
+        info("Done writing report [" + report_dir + "]")
         for benchmark in self.benchmarks:
-            print(" benchmark [" + benchmark.name + "] benchmark.dir [" + benchmark.src_dir + "]")
+            info(" benchmark [" + benchmark.name + "] benchmark.dir [" + benchmark.src_dir + "]")
 
 class HTMLReport:
 
@@ -991,7 +988,6 @@ class HTMLReport:
         self.report = ""
         self.images = ""
         self.metrics = []
-        print("Initialising HTML Report Generation.")
 
     def addImage(self, plot):
 
@@ -1000,7 +996,6 @@ class HTMLReport:
 
         metric_name = plot.image_path.split('/')[-2]
 
-        encoded_image = ""
         with open(plot.image_path, "rb") as image_file:
            encoded_image = str(base64.b64encode(image_file.read()), encoding='utf-8')
 
@@ -1075,8 +1070,7 @@ class HTMLReport:
             f.write(self.report)
 
         file_url = "file://" + file_name
-        # print a clickable link to report file
-        print(f"HTML report generated at: {file_url}")
+        info(f"HTML report generated at: {file_url}")
 
 
 class PerfTestReportCli:
@@ -1116,7 +1110,7 @@ class PerfTestReportCli:
         global cooldown_seconds
         cooldown_seconds = int(args.cooldown[0])
 
-        print("Report directory '" + report_dir + "'")
+        info("Report directory '" + report_dir + "'")
 
         if os.path.isdir('report'):
             shutil.rmtree('report')
@@ -1127,4 +1121,4 @@ class PerfTestReportCli:
         htmlReport.generate()
 
         if not args.full and gc_logs_found:
-            print("gc.log files have been found. Run with -f option to get these plotted.")
+            info("gc.log files have been found. Run with -f option to get these plotted.")
