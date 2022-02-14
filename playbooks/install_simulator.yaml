@@ -29,52 +29,41 @@
       state: directory
       mode: 0775
     loop:
-      - "{{ simulator_dir }}/lib"
-      - "{{ simulator_dir }}/user-lib"
-      - "{{ simulator_dir }}/drivers"
+       - "{{ simulator_dir }}/drivers"
 
-  - name: Copy user_lib
-    ansible.builtin.copy:
-      src: "{{ simulator_home }}/user-lib"
-      dest: "{{ simulator_dir }}"
-      owner:  "{{ console_user | default(ansible_user) }}"
-      mode: preserve
+  # The rscyn is can't resolve the key properly if it uses relative path, so this hack is needed.
+  # https://github.com/ansible/ansible-modules-core/issues/18
+  - name: Set  correct ssh key path
+    set_fact:
+      ansible_ssh_private_key_file: "{{ ansible_ssh_private_key_file | realpath }}"
+    when: ansible_ssh_private_key_file is defined
 
-  - name: Copy lib
-    ansible.builtin.copy:
-      src: "{{ simulator_home }}/lib"
-      dest: "{{ simulator_dir }}"
-      owner:  "{{ console_user | default(ansible_user) }}"
-      mode: preserve
-
-  - name: Copy conf
-    ansible.builtin.copy:
-      src: "{{ simulator_home }}/conf"
-      dest: "{{ simulator_dir }}"
-      owner:  "{{ console_user | default(ansible_user) }}"
-      mode: preserve
-
-  - name: Copy bin
-    ansible.builtin.copy:
+  - name: Copy bin files
+    synchronize:
       src: "{{ simulator_home }}/bin"
       dest: "{{ simulator_dir }}"
-      owner: "{{ console_user | default(ansible_user) }}"
-      mode: preserve
+
+  - name: Copy conf
+    synchronize:
+      src: "{{ simulator_home }}/conf"
+      dest: "{{ simulator_dir }}"
+
+  - name: Copy lib
+    synchronize:
+      src: "{{ simulator_home }}/lib"
+      dest: "{{ simulator_dir }}"
+
+  - name: Copy user-lib
+    synchronize:
+      src: "{{ simulator_home }}/user-lib"
+      dest: "{{ simulator_dir }}"
 
   - name: Copy simulator python files
-    ansible.builtin.copy:
+    synchronize:
       src: "{{ simulator_home }}/src"
       dest: "{{ simulator_dir }}"
-      owner: "{{ console_user | default(ansible_user) }}"
-      mode: preserve
-
-#  - name: Copy bin files
-#    synchronize:
-#      src: "{{ simulator_home }}/bin"
-#      dest: "{{ simulator_dir }}"
-#      rsync_opts:
-#        - "--no-motd"
-#        - "--exclude=__pycache__"
+      rsync_opts:
+        - "--exclude=__pycache__"
 
 #uploadLibraryJar(){
 #    pattern=$1
