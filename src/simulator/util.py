@@ -168,7 +168,6 @@ def shell_logged(cmd, log_file, exit_on_error=False):
         return result.returncode
 
 
-# Copied
 def shell(cmd, shell=True, split=False, use_print=False):
     if split:
         cmd = cmd.split()
@@ -186,9 +185,8 @@ def shell(cmd, shell=True, split=False, use_print=False):
                 process.wait()
                 return process.poll()
 
-            lines = data.splitlines()
             log_level = Level.info if key.fileobj is process.stdout else Level.warn
-            for line in lines:
+            for line in data.splitlines():
                 if use_print:
                     print(line)
                 else:
