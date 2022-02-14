@@ -325,6 +325,19 @@ class InventoryShellCli:
         log_header("Inventory Remote Shell: Done")
 
 
+
+
+class InventoryNewKeyCli:
+
+    def __init__(self, argv):
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Creates a new public/private keypair')
+        parser.add_argument("name", help="The name of the key", nargs=1)
+        args = parser.parse_args(argv)
+
+        new_key(args.name[0])
+
+
 class InventoryCli:
 
     def __init__(self):
@@ -359,6 +372,8 @@ class InventoryCli:
     def install(self, argv):
         InventoryInstallCli(argv)
 
+    def newkey(self, argv):
+        InventoryNewKeyCli(argv)
 
 if __name__ == '__main__':
     os.path.expanduser('~/your_directory')

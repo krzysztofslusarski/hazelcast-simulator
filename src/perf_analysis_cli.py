@@ -2,7 +2,6 @@
 import argparse
 import os
 import statistics
-import subprocess
 from enum import Enum
 import numpy as np
 import matplotlib.pyplot as plt

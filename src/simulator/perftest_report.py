@@ -7,7 +7,6 @@ import os
 import re
 import subprocess
 import shutil
-import sys
 from collections import Counter
 import base64
 
@@ -785,6 +784,7 @@ class Period:
     def end_millis(self):
         return int(round(float(self.end_time)*1000))
 
+
 class Benchmark:
     # the directory where the original files can be found
     src_dir = ""
@@ -878,6 +878,7 @@ class Benchmark:
                 if handle.src == "throughput":
                     ts_list.append(handle.load())
         return Series("", "", False, False, ts_list=ts_list).items
+
 
 class Comparison:
 
