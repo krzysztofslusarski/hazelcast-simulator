@@ -15,7 +15,7 @@ import csv
 
 from load_hosts import load_hosts
 from simulator.hosts import public_ip, ssh_user, ssh_options
-from simulator.ssh import SSH, new_key
+from simulator.ssh import Ssh, new_key
 from simulator.util import read, write, shell, run_parallel, exit_with_error, simulator_home, shell_logged, remove, \
     load_yaml_file, parse_tags
 from simulator.log import info, warn, log_header
@@ -30,10 +30,9 @@ class PerfTest:
     def __init__(self, logfile=None, log_shell_command=True):
         self.logfile = logfile
         self.log_shell_command = log_shell_command
-        pass
 
     def __kill_java(self, host):
-        ssh = SSH(public_ip(host), ssh_user(host), ssh_options(host))
+        ssh = Ssh(public_ip(host), ssh_user(host), ssh_options(host))
         ssh.exec("hazelcast-simulator/bin/hidden/kill_java")
 
     def kill_java(self, host_pattern):

@@ -6,12 +6,12 @@ import yaml
 import sys
 from simulator.util import run_parallel, shell
 from simulator.hosts import public_ip, ssh_user, ssh_options
-from simulator.ssh import SSH
+from simulator.ssh import Ssh
 
 
 def __upload(agent, artifact_ids, version):
     print(f"[INFO]     {public_ip(agent)} starting")
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec("mkdir -p hazelcast-simulator/driver-lib/")
     dest = f"hazelcast-simulator/driver-lib/maven-{version}"
     ssh.exec(f"rm -fr {dest}")

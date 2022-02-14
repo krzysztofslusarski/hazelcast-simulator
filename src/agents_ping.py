@@ -2,13 +2,13 @@
 import yaml
 import sys
 from simulator.hosts import public_ip, ssh_user, ssh_options
-from simulator.ssh import SSH
+from simulator.ssh import Ssh
 from simulator.util import run_parallel
 
 
 def ___agent_ping(agent):
     print(f"[INFO]     {public_ip(agent)}: ping")
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.connect()
     print(f"[INFO]     {public_ip(agent)}: pong")
 

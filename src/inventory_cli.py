@@ -18,6 +18,7 @@ The available commands are:
     destroy             Destroy the resources in the inventory
     import              Imports the inventory from the terraform plan
     install             Installs software on the inventory
+    new_key             Creates a new public/private keypair
     shell               Executes a shell command on the inventory
 '''
 
@@ -325,8 +326,6 @@ class InventoryShellCli:
         log_header("Inventory Remote Shell: Done")
 
 
-
-
 class InventoryNewKeyCli:
 
     def __init__(self, argv):
@@ -372,8 +371,9 @@ class InventoryCli:
     def install(self, argv):
         InventoryInstallCli(argv)
 
-    def newkey(self, argv):
+    def new_key(self, argv):
         InventoryNewKeyCli(argv)
+
 
 if __name__ == '__main__':
     os.path.expanduser('~/your_directory')

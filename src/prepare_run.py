@@ -4,12 +4,12 @@ import sys
 import yaml
 
 from simulator.hosts import public_ip, ssh_user, ssh_options, agent_index
-from simulator.ssh import SSH
+from simulator.ssh import Ssh
 from simulator.util import run_parallel
 
 
 def prepare_run_dir(agent):
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec(f"""
         rm -fr {target_dir}
         mkdir -p {target_dir}
@@ -17,12 +17,12 @@ def prepare_run_dir(agent):
 
 
 def upload(agent):
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.scp_to_remote(upload_dir, target_dir)
 
 
 def start_dstat(agent):
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec("killall -9 dstat || true")
     ssh.exec(f"nohup dstat --epoch -m --all -l --noheaders --nocolor --output {target_dir}/A{agent_index(agent)}_dstat.csv 5 > /dev/null 2>&1 &")
 

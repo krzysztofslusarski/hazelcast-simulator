@@ -4,12 +4,20 @@ import yaml
 import sys
 from simulator.util import run_parallel
 from simulator.hosts import public_ip, ssh_user, ssh_options
-from simulator.ssh import SSH
+from simulator.ssh import Ssh
+
+
+def __verify_installation(agent):
+    print(f"[INFO]     {public_ip(agent)} starting")
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    exitcode = ssh.exec("cd foobar", silent=True)
+    print(f"[INFO]Verifying agents : exit code {exitcode}")
+    #ssh.exec("cd simulator", raise_exception=False)
 
 
 def __start_agent(agent):
     print(f"[INFO]     {public_ip(agent)} starting")
-    ssh = SSH(public_ip(agent), ssh_user(agent), ssh_options(agent))
+    ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
     ssh.exec(
         f"hazelcast-simulator/bin/hidden/agent_start {agent['agent_index']} {public_ip(agent)} {agent['agent_port']}")
 
@@ -22,11 +30,17 @@ def __start_agent(agent):
 #    ssh.exec(
 #        f"./agent_start.sh {agent['agent_index']} {public_ip(agent)} {agent['agent_port']} {simulator_version}")
 
+#print(f"[INFO]Verifying agents")
+agents_yaml = yaml.safe_load(sys.argv[1])
+#r = run_parallel(__verify_installation, [(agent,) for agent in agents_yaml])
+#print(r)
+#print(f"[INFO]Verifying agents:done")
 
 print(f"[INFO]Starting agents: starting")
-agents_yaml = yaml.safe_load(sys.argv[1])
-# util.run_parallel(__verify_installation, [(agent,) for agent in agents_yaml])
-run_parallel(__start_agent, [(agent,) for agent in agents_yaml])
+
+
+r = run_parallel(__start_agent, [(agent,) for agent in agents_yaml])
+print(r)
 print(f"[INFO]Starting agents: done")
 #
 # #!/bin/bash

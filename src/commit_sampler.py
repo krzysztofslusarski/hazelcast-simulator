@@ -16,11 +16,11 @@ class CommitSamplerCli:
         parser.add_argument("last", help="the last commit", nargs=1)
         parser.add_argument("count", help="the maximum number of commits being sampled.", type=int, nargs=1, default=20)
         parser.add_argument("-l", "--length",
-            help="The hash length. 7 is sufficient for most projects. The maximum value is 40.",
-            type=int, nargs=1, default=[40])
+                            help="The hash length. 7 is sufficient for most projects. The maximum value is 40.",
+                            type=int, nargs=1, default=[10])
         parser.add_argument("-i", "--inclusive", help="Include the first and last commit.", action='store_true')
         parser.add_argument("-g", "--git-dir", metavar='git_dir', help="The directory containing the git repo.",
-            nargs=1, default=[f"{os.getcwd()}/.git"])
+                            nargs=1, default=[f"{os.getcwd()}/.git"])
         args = parser.parse_args(argv)
 
         first = args.first[0]
@@ -57,4 +57,3 @@ class CommitSamplerCli:
 
         samples = [commit[0:hash_length] for commit in samples]
         print(" ".join(samples))
-

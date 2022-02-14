@@ -82,6 +82,7 @@ def load_yaml_file(path):
 
 
 def run_parallel(target, args_list, max_workers=8):
+    results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
 
@@ -89,7 +90,8 @@ def run_parallel(target, args_list, max_workers=8):
             futures.append(executor.submit(target, *args))
 
         for f in futures:
-            f.result()
+            results.append(f.result())
+    return results
 
 
 def exit_with_error(text):

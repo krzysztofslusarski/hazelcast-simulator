@@ -17,7 +17,7 @@ def new_key(key_path="key"):
 
 
 # Copied
-class SSH:
+class Ssh:
 
     def __init__(self,
                  ip,
@@ -38,9 +38,6 @@ class SSH:
             self.control_socket_file = None
 
     def connect(self):
-        self.__connect()
-
-    def __connect(self):
         if self.__connected:
             return
 
@@ -55,14 +52,14 @@ class SSH:
         exitcode = None
         max_attempts = 300
         for attempt in range(1, max_attempts):
-            if attempt > self.silent_seconds:
+            if attempt <= self.silent_seconds:
+                exitcode = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
                 log_host(self.ip, f'Trying to connect, attempt [{attempt}/{max_attempts}], command [{cmd}]')
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
                 log_host(self.ip, result.stdout, level=Level.info)
                 log_host(self.ip, result.stderr, level=Level.warn)
                 exitcode = result.returncode
-            else:
-                exitcode = subprocess.call(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             if exitcode == 0 or exitcode == 1:  # todo: we need to deal better with exit code
                 self.__connected = True
@@ -74,8 +71,8 @@ class SSH:
     def __is_connected(self):
         return self.control_socket_file and os.path.exists(self.control_socket_file)
 
-    def exec(self, command, ignore_errors=False):
-        self.__connect()
+    def exec(self, command, silent=False):
+        self.connect()
 
         cmd_list = ["ssh"]
         if self.__is_connected():
@@ -85,6 +82,9 @@ class SSH:
         cmd_list.append(f"{self.user}@{self.ip}")
         cmd_list.append(command)
 
+        if silent:
+            return subprocess.Popen(cmd_list, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
         if self.log_enabled:
             log_host(self.ip, cmd_list)
 
@@ -93,18 +93,15 @@ class SSH:
         sel = DefaultSelector()
         sel.register(process.stdout, EVENT_READ)
         sel.register(process.stderr, EVENT_READ)
-
         while True:
             for key, _ in sel.select():
                 data = key.fileobj.read1().decode()
                 if not data:
                     exitcode = process.poll()
-                    if exitcode == 0 or ignore_errors:
-                        return
-                    else:
+                    if exitcode != 0:
                         raise Exception(f"Failed to execute [{cmd_list}], exitcode={exitcode}")
-                log_level = Level.info if key.fileobj is process.stdout else Level.warn
-                log_host(self.ip, data, log_level)
+                    return exitcode
+                log_host(self.ip, data,  Level.info if key.fileobj is process.stdout else Level.warn)
 
     def scp_from_remote(self, src, dst_dir):
         os.makedirs(dst_dir, exist_ok=True)
@@ -116,7 +113,6 @@ class SSH:
         self.__scp(cmd)
 
     def __scp(self, cmd):
-        self.__connect()
+        self.connect()
         exitcode = subprocess.call(cmd, shell=True)
         # raise Exception(f"Failed to execute {cmd} after {self.max_attempts} attempts")
-

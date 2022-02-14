@@ -48,5 +48,3 @@ class CommitOrderCli:
         else:
             for commit in ordered:
                 print(commit)
-
-
