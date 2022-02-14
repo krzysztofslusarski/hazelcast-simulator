@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import os
 import sys
 import argparse
 from os import path
@@ -361,5 +361,5 @@ class InventoryCli:
 
 
 if __name__ == '__main__':
-    #os.path.expanduser('~/your_directory')
+    os.path.expanduser('~/your_directory')
     InventoryCli()
