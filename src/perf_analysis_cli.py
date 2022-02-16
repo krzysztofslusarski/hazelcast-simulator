@@ -2,13 +2,16 @@
 import argparse
 import os
 import statistics
+import subprocess
 from enum import Enum
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
 import commit_sorter
-from simulator.util import load_yaml_file, validate_dir, mkdir
+from simulator.util import load_yaml_file, validate_dir, mkdir, validate_git_dir
 
 
 class TimeSeries:
@@ -166,7 +169,6 @@ def ordered_commits(dir, git_dir):
     if not commits:
         return []
 
-    print(git_dir)
     return commit_sorter.order(commits, git_dir)
 
 
@@ -221,12 +223,12 @@ class PerfRegressionAnalysisCli:
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
 
         args = parser.parse_args(argv)
-        git_dir = validate_dir(args.git_dir[0])
-        latest = args.latest[0]
+        git_dir = validate_git_dir(args.git_dir[0])
+        latest = args.latest
         width = args.width
         height = args.height
         dir = validate_dir(args.dir[0])
-        output = mkdir(args.output[0])
+        output = mkdir(args.output)
 
         # We need to determine if the time series has 'positive' or 'negative'
 
@@ -245,3 +247,25 @@ class PerfRegressionAnalysisCli:
             filename = f"{output}/{metric}.png"
             print(filename)
             plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=width, height=height)
+
+
+class PerfRegressionSummaryCli:
+
+    def __init__(self, argv):
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Does performance analysis')
+        parser.add_argument("dir", help="The directory containing the results (per commit hash)", nargs=1)
+        parser.add_argument("-g", "--git-dir", metavar='git_dir', help="The directory containing the git repo", nargs=1,
+                            default=[f"{os.getcwd()}/.git"])
+
+        args = parser.parse_args(argv)
+        git_dir = validate_git_dir(args.git_dir[0])
+        dir = validate_dir(args.dir[0])
+
+        commits = ordered_commits(dir, git_dir)
+        for commit in commits:
+            cmd = f"""git --git-dir {git_dir} show -s --format='%H | %ai' {commit}"""
+            out = subprocess.check_output(cmd, shell=True, text=True).strip()
+            result_count = sum(r is r for r in Path(f"{dir}/{commit}").rglob('results.yaml'))
+            print(f"{out} results={result_count}")
+        return

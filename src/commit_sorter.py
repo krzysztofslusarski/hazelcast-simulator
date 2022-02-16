@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import argparse
 
-from simulator.util import validate_dir
+from simulator.util import validate_dir, validate_git_dir
 
 
 def load_commits(git_dir):
@@ -37,7 +37,7 @@ class CommitOrderCli:
                             default=[f"{os.getcwd()}/.git"])
         parser.add_argument("-d", "--debug", help="print the commits including timestamp", action='store_true')
         args = parser.parse_args(argv)
-        git_dir = validate_dir(args.git_dir[0])
+        git_dir = validate_git_dir(args.git_dir[0])
         commits = args.commits
         ordered = order(commits, git_dir)
 

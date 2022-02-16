@@ -11,6 +11,8 @@
       yum update || true
       apt-get update || true
     become: yes
+    args:
+      warn: false
 
   - name: Install dstat
     ansible.builtin.package:
@@ -50,8 +52,29 @@
 
   - name: Copy lib
     synchronize:
-      src: "{{ simulator_home }}/lib"
-      dest: "{{ simulator_dir }}"
+      src: "{{ simulator_home }}/lib/"
+      dest: "{{ simulator_dir }}/lib/"
+      rsync_opts:
+        - '--include=activemq-broker*'
+        - '--include=activemq-client*'
+        - '--include=geronimo-jms*'
+        - '--include=geronimo-j2ee*'
+        - '--include=slf4j-api*'
+        - '--include=hawtbuf-*'
+        - '--include=affinity*'
+        - '--include=jna*'
+        - '--include=cache-api*'
+        - '--include=commons-codec*'
+        - '--include=commons-lang3*'
+        - '--include=freemarker*'
+        - '--include=gson-*'
+        - '--include=HdrHistogram-*'
+        - '--include=jopt*'
+        - '--include=junit*'
+        - '--include=log4j*'
+        - '--include=slf4j-log4j12-*'
+        - '--include=simulator-*'
+        - '--exclude=*'
 
   - name: Copy user-lib
     synchronize:
@@ -64,50 +87,3 @@
       dest: "{{ simulator_dir }}"
       rsync_opts:
         - "--exclude=__pycache__"
-
-#uploadLibraryJar(){
-#    pattern=$1
-#    src="$SIMULATOR_HOME/lib/$pattern"
-#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/lib
-#}
-#
-#uploadTestLibJar(){
-#    pattern=$1
-#    src="$SIMULATOR_HOME/drivers/driver-$VENDOR/$pattern"
-#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/drivers/driver-$VENDOR/
-#}
-#
-#uploadToRemoteSimulatorDir(){
-#    src=$1
-#    target=$2
-#    rsync --checksum -a -L -e "ssh $SSH_OPTIONS" $src $SSH_USER@$AGENT:hazelcast-simulator-$SIMULATOR_VERSION/$target
-#}
-#
-## Upload Simulator JARs
-#uploadLibraryJar "simulator-*"
-#
-## We don't copy all JARs to the AGENT to increase upload speed
-## ActiveMQ libraries
-#uploadLibraryJar "activemq-broker*"
-#uploadLibraryJar "activemq-client*"
-#uploadLibraryJar "geronimo-jms*"
-#uploadLibraryJar "geronimo-j2ee*"
-#uploadLibraryJar "slf4j-api*"
-#uploadLibraryJar "hawtbuf-*"
-#uploadLibraryJar "affinity*"
-#uploadLibraryJar "jna*"
-#
-#uploadLibraryJar "cache-api*"
-#uploadLibraryJar "commons-codec*"
-#uploadLibraryJar "commons-lang3*"
-#uploadLibraryJar "freemarker*"
-#uploadLibraryJar "gson-*"
-#uploadLibraryJar "HdrHistogram-*"
-#uploadLibraryJar "jopt*"
-#uploadLibraryJar "junit*"
-#uploadLibraryJar "log4j*"
-#uploadLibraryJar "slf4j-log4j12-*"
-#
-#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/bin/" "bin"
-#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/conf/" "conf"
-#uploadToRemoteSimulatorDir "$SIMULATOR_HOME/user-lib/" "user-lib/"

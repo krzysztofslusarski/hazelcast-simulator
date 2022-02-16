@@ -10,6 +10,7 @@ class Level(enum.Enum):
     info = 1
     warn = 2
     error = 3
+    print = 4
 
 
 def log_host(host, msg, level=Level.info):
@@ -25,8 +26,10 @@ def level_text(level):
         return "INFO "
     elif level == Level.warn:
         return "WARN "
-    else:
+    elif level == Level.error:
         return "ERROR"
+    else:
+        return ""
 
 
 def info(msg):
@@ -43,6 +46,11 @@ def warn(msg):
 
 def log(msg, level=Level.info):
     if not msg:
+        return
+
+    if level == level.print:
+        for line in msg.splitlines():
+            print(line)
         return
 
     # get rid of color codes

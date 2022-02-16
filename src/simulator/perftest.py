@@ -2,7 +2,6 @@ import argparse
 import datetime
 import getpass
 import shutil
-import sys
 
 import tempfile
 import uuid

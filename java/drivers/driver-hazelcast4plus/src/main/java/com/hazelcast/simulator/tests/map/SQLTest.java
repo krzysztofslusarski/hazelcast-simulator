@@ -25,6 +25,7 @@ import com.hazelcast.simulator.test.annotations.TimeStep;
 import com.hazelcast.simulator.tests.map.domain.Employee;
 import com.hazelcast.simulator.worker.loadsupport.Streamer;
 import com.hazelcast.simulator.worker.loadsupport.StreamerFactory;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 
@@ -34,26 +35,28 @@ public class SQLTest extends HazelcastTest {
 
     // properties
     public int itemCount = 1_000_000;
+    public String query;
+    // The $MAP will automatically be replaced by the configured map name
+    public String where = "__key = ?";
+
     private IMap<Integer, Object> map;
     private String select;
 
     @Setup
     public void setUp() {
         map = targetInstance.getMap(name);
-        select = "SELECT id, name, age FROM "+name+" WHERE __key = ?";
-
+        select = "SELECT id, name, age FROM " + name + " WHERE " + where;
     }
 
-    @Prepare
+    @Prepare(global = true)
     public void prepare() {
-        targetInstance.getSql().execute("CREATE MAPPING \""+name+"\" EXTERNAL NAME \""+name+"\" TYPE IMap\n" +
-                "OPTIONS (\n" +
-                "  'keyFormat' = 'java',\n" +
-                "  'keyJavaClass' = 'java.lang.Integer',\n" +
-                "  'valueFormat' = 'java',\n" +
-                "  'valueJavaClass' = 'com.hazelcast.simulator.tests.map.domain.Employee'\n" +
-                ")");
-
+            targetInstance.getSql().execute("CREATE MAPPING \"" + name + "\" EXTERNAL NAME \"" + name + "\" TYPE IMap\n" +
+                    "OPTIONS (\n" +
+                    "  'keyFormat' = 'java',\n" +
+                    "  'keyJavaClass' = 'java.lang.Integer',\n" +
+                    "  'valueFormat' = 'java',\n" +
+                    "  'valueJavaClass' = 'com.hazelcast.simulator.tests.map.domain.Employee'\n" +
+                    ")");
         Streamer<Integer, Object> streamer = StreamerFactory.getInstance(map);
         Random random = new Random();
         for (int i = 0; i < itemCount; i++) {

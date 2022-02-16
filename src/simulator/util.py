@@ -55,6 +55,20 @@ def validate_dir(path):
     return path
 
 
+def validate_git_dir(path):
+    path = validate_dir(path)
+
+    if not path.endswith("/.git"):
+        corrected_path = f"{path}/.git"
+        return validate_git_dir(corrected_path)
+
+    if not os.path.exists(f"{path}/refs"):
+        print(f"Directory [{path}] is not valid git directory")
+        exit(1)
+
+    return path
+
+
 def mkdir(path):
     path = os.path.expanduser(path)
 
@@ -108,11 +122,8 @@ def shell_logged(cmd, log_file, exit_on_error=False):
         return result.returncode
 
 
-def shell(cmd, shell=True, split=False, use_print=False):
-    if split:
-        cmd = cmd.split()
+def shell(cmd, shell=True, use_print=False):
     process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=shell)
-
     selector = DefaultSelector()
     selector.register(process.stdout, EVENT_READ)
     selector.register(process.stderr, EVENT_READ)
@@ -125,12 +136,12 @@ def shell(cmd, shell=True, split=False, use_print=False):
                 process.wait()
                 return process.poll()
 
-            log_level = Level.info if key.fileobj is process.stdout else Level.warn
-            for line in data.splitlines():
-                if use_print:
-                    print(line)
-                else:
-                    log(line, log_level)
+            if use_print:
+                log_level = Level.print
+            else:
+                log_level = Level.info if key.fileobj is process.stdout else Level.warn
+
+            log(data, log_level)
 
 
 def parse_tag(s):

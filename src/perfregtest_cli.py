@@ -5,13 +5,14 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-import simulator.log
+
+import commit_sampler
 from commit_sampler import CommitSamplerCli
 from commit_sorter import CommitOrderCli
-from perf_analysis_cli import PerfRegressionAnalysisCli
-from simulator.log import info
+from perf_analysis_cli import PerfRegressionAnalysisCli, PerfRegressionSummaryCli
+from simulator.log import info, log_header
 from simulator.perftest import PerfTest
-from simulator.util import shell_logged, now_seconds, validate_dir, load_yaml_file
+from simulator.util import shell_logged, now_seconds, validate_dir, load_yaml_file, exit_with_error
 
 default_tests_path = 'tests.yaml'
 logfile_name = "run.log"
@@ -19,26 +20,27 @@ logfile_name = "run.log"
 usage = '''perfregtest <command> [<args>]
 
 The available commands are:
-    run                 Runs performance regression tests.
     analyze             Analyzes the results of performance regression tests..
     commit_sampler      Retrieves a sample of commits between a start and end commit.
     commit_order        Returns an ordered list (from old to new) of commits.
+    run                 Runs performance regression tests.
+    summary             Shows a summary of a set of performance regression tests
 '''
 
 
-def get_project_version(path):
+def get_project_version(project_path):
     cmd = f"""
          set -e
-         cd {path}
+         cd {project_path}
          mvn -q -Dexec.executable=echo -Dexec.args='${{project.version}}' --non-recursive exec:exec
          """
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
 
-def build(commit, path):
+def build(commit, project_path):
     exitcode = shell_logged(f"""
         set -e
-        cd {path}
+        cd {project_path}
         git fetch --all --tags
         git reset --hard
         git checkout {commit}
@@ -47,8 +49,8 @@ def build(commit, path):
     return exitcode == 0
 
 
-def run(test, commit, runs, path):
-    version = get_project_version(path)
+def run(test, commit, runs, project_path, debug=False):
+    version = get_project_version(project_path)
     test_name = test['name']
     test['version'] = f"maven={version}"
     commit_dir = f"runs/{test_name}/{commit}"
@@ -60,41 +62,48 @@ def run(test, commit, runs, path):
         run_path = f"{commit_dir}/{dt}"
         info(f"{i + 1} {run_path}")
 
-        perftest = PerfTest(logfile=logfile_name)
+        perftest = PerfTest(logfile=logfile_name, log_shell_command=debug)
         perftest.run_test(test, run_path=run_path, )
         perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name})
 
 
-def run_all(commits, runs, path, tests):
-    info(f"Source dir {path}")
+def run_all(commits, runs, project_path, tests, debug):
+    if not tests:
+        exit_with_error("No tests found.")
+
+    info(f"Source dir {project_path}")
     info(f"Number of commits {len(commits)}")
+    info(f"Tests to execute: {[t['name'] for t in tests]}")
+
     start = now_seconds()
     for commitIndex, commit in enumerate(commits):
         commit_was_build = False
+        c = commit_sampler.to_commit(f"{project_path}/.git", commit)
+        if not c.startswith(commit):
+            info(f"{commit}->{c}")
+            commit = c
 
         for test in tests:
             test_name = test['name']
-            result_count = 0
-            for p in Path(f"runs/{test_name}/{commit}").rglob('results.yaml'):
-                result_count += 1
+            result_count = sum(r is r for r in Path(f"runs/{test_name}/{commit}").rglob('results.yaml'))
             remaining = runs - result_count
 
             if remaining <= 0:
                 info(f"Skipping commit {commit}, test {test_name}, sufficient runs")
                 continue
 
-            simulator.log.log_header(f"Commit {commit}")
+            log_header(f"Commit {commit}")
             start_test = now_seconds()
             info(f"Commit {commitIndex + 1}/{len(commits)}")
             info(f"Building {commit}")
             if not commit_was_build:
-                if build(commit, path):
+                if build(commit, project_path):
                     commit_was_build = True
                 else:
                     info("Build failed, skipping runs.")
                     continue
 
-            run(test, commit, remaining, path)
+            run(test, commit, remaining, project_path, debug)
             info(f"Testing {test_name} took {now_seconds() - start_test}s")
     duration = now_seconds() - start
     info(f"Duration: {duration}s")
@@ -107,17 +116,28 @@ class PerfRegTestRunCli:
                                          description='Runs performance regression tests based on a series of commits')
         parser.add_argument("path", nargs=1, help="The path of the project to build")
         parser.add_argument("commits", nargs="+", help="The commits to build")
-        parser.add_argument('--tests', nargs=1, help='The tests file', default=[default_tests_path])
+        parser.add_argument('-f', '--file', nargs=1, help='The tests file', default=[default_tests_path])
         parser.add_argument("-r", "--runs", nargs=1, help="The number of runs per commit",
                             default=[3], type=int)
+        parser.add_argument('-t', '--test', nargs=1,
+                            help='The names of the tests to run. By default all tests are run.')
+        parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
 
         args = parser.parse_args(argv)
         commits = args.commits
         runs = args.runs[0]
-        path = validate_dir(args.path[0])
-        tests = load_yaml_file(args.tests[0])
+        project_path = validate_dir(args.path[0])
+        tests = load_yaml_file(args.file[0])
+        filtered_tests = []
+        if args.test:
+            for test in tests:
+                test_name = test['name']
+                if test_name in args.test:
+                    filtered_tests.append(test)
+        else:
+            filtered_tests = tests
 
-        run_all(commits, runs, path, tests)
+        run_all(commits, runs, project_path, filtered_tests, args.debug)
 
 
 class PerfRegtestCli:
@@ -145,6 +165,9 @@ class PerfRegtestCli:
 
     def analyze(self, argv):
         PerfRegressionAnalysisCli(argv)
+
+    def summary(self, argv):
+        PerfRegressionSummaryCli(argv)
 
 
 if __name__ == '__main__':
