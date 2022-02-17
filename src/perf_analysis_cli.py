@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
 
 import commit_sorter
-from simulator.util import load_yaml_file, validate_dir, mkdir, validate_git_dir
+from simulator.util import load_yaml_file, validate_dir, mkdir, validate_git_dir, write
 
 
 class TimeSeries:
@@ -143,6 +143,10 @@ def load_commit_dir(dir, commit):
         for test, map in results_yaml.items():
             measurements = map['measurements']
             for name, value in measurements.items():
+                # hack
+                if name == "duration(ms)":
+                    continue
+
                 values = result.get(value)
                 if not values:
                     values = []
@@ -172,7 +176,7 @@ def ordered_commits(dir, git_dir):
     return commit_sorter.order(commits, git_dir)
 
 
-def load_timeseries(dir, git_dir):
+def load_ts_per_metric(dir, git_dir):
     y_map = {}
     x_map = {}
     for commit in ordered_commits(dir, git_dir):
@@ -220,33 +224,90 @@ class PerfRegressionAnalysisCli:
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
         parser.add_argument("--width", nargs=1, help="The width of the images", type=int, default=1600)
         parser.add_argument("--height", nargs=1, help="The height of the images", type=int, default=900)
-        parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1, default=os.getcwd())
+        parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1,
+                            default=f"{os.getcwd()}/analysis")
 
         args = parser.parse_args(argv)
-        git_dir = validate_git_dir(args.git_dir[0])
-        latest = args.latest
-        width = args.width
-        height = args.height
-        dir = validate_dir(args.dir[0])
-        output = mkdir(args.output)
+        self.git_dir = validate_git_dir(args.git_dir[0])
+        self.latest = args.latest
+        self.width = args.width
+        self.height = args.height
+        self.dir = validate_dir(args.dir[0])
+        self.output = mkdir(args.output)
+        self.zero = args.zero
+        self.ts_per_metric = load_ts_per_metric(self.dir, self.git_dir)
+        self.anomalies_per_metric = {}
+        self.changepoints_per_metric = {}
 
-        # We need to determine if the time series has 'positive' or 'negative'
+        self.trim()
+        self.changepoint_detection()
+        self.anomaly_detection()
+        self.make_plots()
+        self.make_report()
 
-        result = load_timeseries(dir, git_dir)
-        for metric, ts in result.items():
-            if latest:
-                print(f"Taking the last {latest} items of timeseries with {len(ts)} items")
-                ts = ts.newest(latest)
+        print(f"Analysis results can be found in [{self.output}].")
 
-            print(f"length timeseries {len(ts)}")
-            cps = changepoint_detection(ts)
+    def make_report(self):
+        problems = {}
+        commits = set()
+        for metric, ts in self.ts_per_metric.items():
+            cps = self.changepoints_per_metric.get(metric)
+            aps = self.anomalies_per_metric.get(metric)
+            for cp in cps:
+                commit = ts.x[cp.index]
+                commits.add(commit)
+
+                problems_for_commit = problems.get(commit)
+                if not problems_for_commit:
+                    problems_for_commit = []
+                    problems[commit] = problems_for_commit
+
+                problems_for_commit.append(f"{metric} change-point")
+            for ap in aps:
+                commit = ts.x[ap.index]
+                commits.add(commit)
+
+                problems_for_commit = problems.get(commit)
+                if not problems_for_commit:
+                    problems_for_commit = []
+                    problems[commit] = problems_for_commit
+
+                problems_for_commit.append(f"{metric} anomaly")
+        commits = commit_sorter.order(commits, self.git_dir)
+
+        text = ""
+        for commit in commits:
+            problems_for_commit = problems.get(commit)
+            if not problems_for_commit:
+                continue
+
+            text += f"commit {commit}\n"
+            for problem in problems_for_commit:
+                text += f"   {problem}\n"
+        write(f"{self.output}/analysis.txt", text)
+
+    def make_plots(self):
+        for metric, ts in self.ts_per_metric.items():
+            cps = self.changepoints_per_metric.get(metric)
+            aps = self.anomalies_per_metric.get(metric)
+            ymin = 0 if self.zero else None
+            filename = f"{self.output}/{metric}.png"
+            plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=self.width, height=self.height)
+
+    def anomaly_detection(self):
+        for metric, ts in self.ts_per_metric.items():
             aps = anomaly_detection(ts, n=4)
+            self.anomalies_per_metric[metric] = aps
 
-            ymin = 0 if args.zero else None
+    def changepoint_detection(self):
+        for metric, ts in self.ts_per_metric.items():
+            cps = changepoint_detection(ts)
+            self.changepoints_per_metric[metric] = cps
 
-            filename = f"{output}/{metric}.png"
-            print(filename)
-            plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=width, height=height)
+    def trim(self):
+        if self.latest:
+            for metric, ts in self.ts_per_metric.items():
+                self.ts_per_metric[metric] = ts.newest(self.latest)
 
 
 class PerfRegressionSummaryCli:

@@ -1,6 +1,8 @@
 
 locals {
     settings = yamldecode(file("../inventory_plan.yaml"))
+    private_key = file("../${local.settings.keypair.private_key}")
+    public_key = file("../${local.settings.keypair.public_key}")
 }
 
 provider "aws" {
@@ -36,7 +38,7 @@ resource "aws_default_vpc" "vpc" {
 
 resource "aws_key_pair" "keypair" {
     key_name   = "simulator-keypair-${local.settings.basename}"
-    public_key = file("../${local.settings.keypair.public_key}")
+    public_key = local.public_key
 }
 
 resource "aws_subnet" "subnet" {
@@ -133,6 +135,21 @@ resource "aws_instance" "nodes" {
         "passthrough:ansible_ssh_private_key_file" = local.settings.keypair.private_key
         "passthrough:ansible_user" = local.settings.nodes.user
     }
+
+    connection {
+        type        = "ssh"
+        user        = local.settings.nodes.user
+        private_key = local.private_key
+        host        = self.public_ip
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+           "echo \"${local.private_key}\" > ~/.ssh/id_rsa",
+           "echo \"${local.public_key}\" > ~/.ssh/id_rsa.pub",
+           "chmod 600 ~/.ssh/id_rsa*"
+        ]
+    }
 }
 
 output "nodes" {
@@ -198,6 +215,21 @@ resource "aws_instance" "loadgenerators" {
         Owner = local.settings.owner
         "passthrough:ansible_ssh_private_key_file" = local.settings.keypair.private_key
         "passthrough:ansible_user" = local.settings.loadgenerators.user
+    }
+
+    connection {
+        type        = "ssh"
+        user        = local.settings.loadgenerators.user
+        private_key = local.private_key
+        host        = self.public_ip
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+           "echo \"${local.private_key}\" > ~/.ssh/id_booboo",
+           "echo \"${local.public_key}\" > ~/.ssh/id_rsa.pub",
+           "chmod 600 ~/.ssh/id_rsa*"
+        ]
     }
 } 
 

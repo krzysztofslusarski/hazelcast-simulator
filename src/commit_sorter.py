@@ -14,6 +14,9 @@ def load_commits(git_dir):
 
 # https://stackoverflow.com/questions/22714371/how-can-i-sort-a-set-of-git-commit-ids-in-topological-order
 def order(commits, git_dir):
+    if not commits:
+        return commits
+
     with tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="commit_", suffix=".txt") as tmp:
         tmp.write("\n".join(commits))
         tmp.write("\n")

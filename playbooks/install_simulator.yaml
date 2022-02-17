@@ -50,10 +50,12 @@
       src: "{{ simulator_home }}/conf"
       dest: "{{ simulator_dir }}"
 
+  # upload to the first host
   - name: Copy lib
     synchronize:
       src: "{{ simulator_home }}/lib/"
       dest: "{{ simulator_dir }}/lib/"
+      #private_key: ~/.ssh/id_rsa
       rsync_opts:
         - '--include=activemq-broker*'
         - '--include=activemq-client*'
@@ -75,6 +77,9 @@
         - '--include=slf4j-log4j12-*'
         - '--include=simulator-*'
         - '--exclude=*'
+    # for details about the naming
+    # https://stackoverflow.com/questions/41571716/ansible-first-hostname-of-groups
+    #delegate_to: "{{ play_hosts | first }}"
 
   - name: Copy user-lib
     synchronize:
