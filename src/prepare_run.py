@@ -23,7 +23,7 @@ def upload(agent):
 
 def start_dstat(agent):
     ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
-    ssh.exec("""
+    ssh.exec(f"""
             set -e
             killall -9 dstat || true
             nohup dstat --epoch -m --all -l --noheaders --nocolor --output {target_dir}/A{agent_index(agent)}_dstat.csv 5 > /dev/null 2>&1 &
