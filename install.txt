@@ -1,2 +1,3 @@
-pip-3 install pyyaml
-pip-3 install -U matplotlib
+pip3 install -U pyyaml
+pip3 install -U matplotlib
+pip3 install -U signal-processing-algorithms

@@ -23,8 +23,12 @@ def upload(agent):
 
 def start_dstat(agent):
     ssh = Ssh(public_ip(agent), ssh_user(agent), ssh_options(agent))
-    ssh.exec("killall -9 dstat || true")
-    ssh.exec(f"nohup dstat --epoch -m --all -l --noheaders --nocolor --output {target_dir}/A{agent_index(agent)}_dstat.csv 5 > /dev/null 2>&1 &")
+    ssh.exec("""
+            set -e
+            killall -9 dstat || true
+            nohup dstat --epoch -m --all -l --noheaders --nocolor --output {target_dir}/A{agent_index(agent)}_dstat.csv 5 > /dev/null 2>&1 &
+            sleep 1
+            """)
 
 
 upload_dir = sys.argv[1]
