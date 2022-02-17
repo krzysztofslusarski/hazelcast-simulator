@@ -96,12 +96,13 @@ def run_all(commits, runs, project_path, tests, debug):
             start_test = now_seconds()
             info(f"Commit {commitIndex + 1}/{len(commits)}")
             info(f"Building {commit}")
+
             if not commit_was_build:
                 if build(commit, project_path):
                     commit_was_build = True
                 else:
                     info("Build failed, skipping runs.")
-                    continue
+                    break
 
             run(test, commit, remaining, project_path, debug)
             info(f"Testing {test_name} took {now_seconds() - start_test}s")
