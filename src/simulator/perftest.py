@@ -184,11 +184,11 @@ class PerfTest:
         else:
             return shell(cmd, use_print=True)
 
-    def collect(self, dir, tags):
+    def collect(self, dir, tags, warmup=0, cooldown=0):
         report_dir = f"{dir}/report"
 
         if not os.path.exists(report_dir):
-            self.__shell(f"perftest report  -o {report_dir} {dir}")
+            self.__shell(f"perftest report  -w {warmup} -c {cooldown} -o {report_dir} {dir}")
 
         csv_path = f"{report_dir}/report.csv"
         if not os.path.exists(csv_path):
@@ -375,6 +375,8 @@ class PerftestExecCli:
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Executes a performance test.')
         parser.add_argument('file', nargs='?', help='The test file', default=default_tests_path)
+        parser.add_argument('-w', '--warmup', nargs=1, default=[0], type=int,
+                            help='The warmup period in seconds. The warmup removes datapoints from the start.')
 
         parser.add_argument('--performanceMonitorInterval',
                             nargs=1,
@@ -515,7 +517,14 @@ class PerftestExecCli:
             client_type=args.clientType,
             skip_download=args.skipDownload)
 
-        perftest.collect(run_path, tags)
+        warmup = test.get("warmup")
+        if not warmup:
+            warmup = 0
+        cooldown = test.get("cooldown")
+        if not cooldown:
+            cooldown = 0
+
+        perftest.collect(run_path, tags, warmup=warmup, cooldown=cooldown)
 
 
 class PerftestKillJavaCli:
@@ -539,14 +548,17 @@ class PerftestCollectCli:
                                          description='Collects the results from a performance test')
         parser.add_argument("dir", help="The directory with the test runs")
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
+        parser.add_argument('-w', '--warmup', nargs=1, default=[0], type=int,
+                            help='The warmup period in seconds. The warmup removes datapoints from the start.')
+
         args = parser.parse_args(argv)
 
         tags = parse_tags(args.tag)
 
         log_header("perftest collect")
-
+        warmup = args.warmup
         perftest = PerfTest()
-        perftest.collect(args.dir, tags)
+        perftest.collect(args.dir, tags, warmup=warmup)
 
         log_header("perftest collect: done")
 

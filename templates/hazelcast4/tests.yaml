@@ -11,6 +11,8 @@
   member_args: -Xms3g -Xmx3g
   performance_monitor_interval_seconds: 1
   verify_enabled: True
+  warmup: 0
+  cooldown: 0
   test:
       class: com.hazelcast.simulator.tests.map.IntByteMapTest
       threadCount: 40
@@ -31,6 +33,8 @@
   node_hosts: nodes
   verify_enabled: False
   performance_monitor_interval_seconds: 1
+  warmup: 0
+  cooldown: 0
   test:
       class: com.hazelcast.simulator.tests.map.IntByteMapTest
       threadCount: 10
