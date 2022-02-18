@@ -65,22 +65,22 @@ def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900):
     plt.ylabel(ts.y_label)
     plt.plot(ts.fake_x, ts.y, color="orange")
 
-    if cps:
-        for p in cps:
-            x = ts.fake_x[p.index]
-            y = ts.y[p.index]
-            commit = ts.x[p.index]
-            plt.plot(x, y, 'o', color="green", label=f"cp: {commit}")
-
     if aps:
         for p in aps:
             x = ts.fake_x[p.index]
             y = ts.y[p.index]
             commit = ts.x[p.index]
             if p.direction == Change.POSITIVE:
-                plt.plot(x, y, 'o', color="green", label=f"pa: {commit}")
+                plt.plot(x, y, 'o', markersize=6, color="green", label=f"pa: {commit}")
             else:
-                plt.plot(x, y, 'o', color="red", label=f"na: {commit}")
+                plt.plot(x, y, 'o', markersize=6, color="red", label=f"na: {commit}")
+
+    if cps:
+        for p in cps:
+            x = ts.fake_x[p.index]
+            y = ts.y[p.index]
+            commit = ts.x[p.index]
+            plt.plot(x, y, 'o', markersize=10, color="blue", label=f"cp: {commit}")
 
     plt.legend()
     plt.ylim(ymin=ymin)
@@ -96,32 +96,38 @@ class Change(Enum):
 # https://netflixtechblog.com/fixing-performance-regressions-before-they-happen-eab2602b86fe
 # m is the number of samples
 # n is the number of standard deviation away from the mean
-def anomaly_detection(ts, m=40, n=4):
+def anomaly_detection(ts, min_history_length=1, max_history_length=40, max_n=4):
+    if min_history_length > max_history_length:
+        raise Exception()
+
     history = []
     anomalies = []
     for i in range(1, len(ts.x)):
         history.append(ts.y[i - 1])
 
-        if len(history) > m:
+        if len(history) > max_history_length:
             del history[0]
 
-        if len(history) == 1:
+        if len(history) < min_history_length:
             continue
+
         mean = statistics.mean(history)
         std = statistics.pstdev(history)
         diff = ts.y[i] - mean
-        if abs(diff) > n * std:
-            direction = Change.POSITIVE if diff > 0 else Change.NEGATIVE
-            anomalies.append(AnomalyPoint(i, direction))
+        n = diff / std
+        if abs(n) > max_n:
+            anomalies.append(AnomalyPoint(i, n))
 
     return anomalies
 
 
 class AnomalyPoint:
 
-    def __init__(self, index, direction):
+    # n is the number of standard deviations away from the mean
+    def __init__(self, index, n):
         self.index = index
-        self.direction = direction
+        self.n = n
+        self.direction = Change.POSITIVE if n > 0 else Change.NEGATIVE
 
 
 class ChangePoint:
@@ -147,7 +153,7 @@ def load_commit_dir(dir, commit):
                 if name == "duration(ms)":
                     continue
 
-                values = result.get(value)
+                values = result.get(name)
                 if not values:
                     values = []
                     result[name] = values
@@ -155,11 +161,24 @@ def load_commit_dir(dir, commit):
     return result
 
 
-def pick_best_value(values):
+def pick_best_value(values, metric):
     best = None
-    for (commit, value) in values:
-        if not best or value < best[1]:
-            best = (commit, value)
+
+    print("==============")
+    # ugly hack; need better mechanism
+    if "(us)" in metric:
+        for (commit, value) in values:
+            print(value)
+            if not best or value < best[1]:
+                best = (commit, value)
+    else:
+        for (commit, value) in values:
+            print(value)
+            if not best or value > best[1]:
+                best = (commit, value)
+
+    print(f"metric={metric}")
+    print(f"best {best[1]}")
     return best
 
 
@@ -183,7 +202,7 @@ def load_ts_per_metric(dir, git_dir):
         result = load_commit_dir(dir, commit)
 
         for metric_name, values in result.items():
-            (commit, value) = pick_best_value(values)
+            (commit, value) = pick_best_value(values, metric_name)
 
             y = y_map.get(metric_name)
             x = x_map.get(metric_name)
@@ -194,6 +213,8 @@ def load_ts_per_metric(dir, git_dir):
                 x_map[metric_name] = x
             y.append(value)
             x.append(commit)
+            if len(x)>0:
+                print(len(x))
 
     result = {}
     for metric_name in y_map.keys():
@@ -204,7 +225,7 @@ def load_ts_per_metric(dir, git_dir):
 
 
 def changepoint_detection(ts):
-    indices = e_divisive(ts.y, permutations=1000)
+    indices = e_divisive(ts.y, permutations=10000)
     result = []
     for i in indices:
         result.append(ChangePoint(i, None))
@@ -272,7 +293,9 @@ class PerfRegressionAnalysisCli:
                     problems_for_commit = []
                     problems[commit] = problems_for_commit
 
-                problems_for_commit.append(f"{metric} anomaly")
+                x = "{:.2f}".format(ap.n)
+                msg = f"{x} std away from the mean."
+                problems_for_commit.append(f"{metric} anomaly : {msg}")
         commits = commit_sorter.order(commits, self.git_dir)
 
         text = ""
@@ -296,7 +319,7 @@ class PerfRegressionAnalysisCli:
 
     def anomaly_detection(self):
         for metric, ts in self.ts_per_metric.items():
-            aps = anomaly_detection(ts, n=4)
+            aps = anomaly_detection(ts, min_history_length=10, max_n=4)
             self.anomalies_per_metric[metric] = aps
 
     def changepoint_detection(self):

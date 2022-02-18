@@ -133,8 +133,7 @@ def shell(cmd, shell=True, use_print=False):
             data = key.fileobj.read1().decode()
 
             if not data:
-                process.wait()
-                return process.poll()
+                return process.wait()
 
             if use_print:
                 log_level = Level.print

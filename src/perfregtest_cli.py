@@ -37,7 +37,11 @@ def get_project_version(project_path):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
 
-def build(commit, project_path):
+def build(commit, project_path, commit_dir):
+    build_error_file = f"{commit_dir}/build_failure"
+    if os.path.exists(build_error_file):
+        return False
+
     exitcode = shell_logged(f"""
         set -e
         cd {project_path}
@@ -46,7 +50,12 @@ def build(commit, project_path):
         git checkout {commit}
         mvn clean install -DskipTests -Dquick
     """, log_file=logfile_name)
-    return exitcode == 0
+
+    if exitcode == 0:
+        return True
+    else:
+        open(build_error_file, "a").close()
+        return False
 
 
 def run(test, commit, runs, project_path, debug=False):
@@ -76,6 +85,7 @@ def run_all(commits, runs, project_path, tests, debug):
     info(f"Tests to execute: {[t['name'] for t in tests]}")
 
     start = now_seconds()
+    builds_failed = 0
     for commitIndex, commit in enumerate(commits):
         commit_was_build = False
         c = commit_sampler.to_commit(f"{project_path}/.git", commit)
@@ -85,7 +95,8 @@ def run_all(commits, runs, project_path, tests, debug):
 
         for test in tests:
             test_name = test['name']
-            result_count = sum(r is r for r in Path(f"runs/{test_name}/{commit}").rglob('results.yaml'))
+            commit_dir = f"runs/{test_name}/{commit}"
+            result_count = sum(r is r for r in Path(commit_dir).rglob('results.yaml'))
             remaining = runs - result_count
 
             if remaining <= 0:
@@ -98,9 +109,10 @@ def run_all(commits, runs, project_path, tests, debug):
             info(f"Building {commit}")
 
             if not commit_was_build:
-                if build(commit, project_path):
+                if build(commit, project_path, commit_dir):
                     commit_was_build = True
                 else:
+                    builds_failed +=1
                     info("Build failed, skipping runs.")
                     break
 
@@ -108,6 +120,7 @@ def run_all(commits, runs, project_path, tests, debug):
             info(f"Testing {test_name} took {now_seconds() - start_test}s")
     duration = now_seconds() - start
     info(f"Duration: {duration}s")
+    info(f"Builds failed: {builds_failed}")
 
 
 class PerfRegTestRunCli:

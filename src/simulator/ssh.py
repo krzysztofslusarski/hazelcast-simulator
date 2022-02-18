@@ -96,13 +96,8 @@ class Ssh:
         while True:
             for key, _ in sel.select():
                 data = key.fileobj.read1().decode()
-                # todo: needs work
                 if not data:
-                    exitcode = process.poll()
-                    if exitcode is None:
-                        # process has not completed yet. Do more reading
-                        continue
-
+                    exitcode = process.wait()
                     if exitcode != 0:
                         raise Exception(f"Failed to execute [{cmd_list}], exitcode={exitcode}")
                     return exitcode
