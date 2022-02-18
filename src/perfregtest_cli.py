@@ -54,7 +54,7 @@ def build(commit, project_path, commit_dir):
     if exitcode == 0:
         return True
     else:
-        open(build_error_file, "a").close()
+        open(build_error_file, "w").close()
         return False
 
 
