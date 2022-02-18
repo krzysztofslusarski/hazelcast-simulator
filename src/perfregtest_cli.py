@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 import commit_sampler
+import simulator.util
 from commit_sampler import CommitSamplerCli
 from commit_sorter import CommitOrderCli
 from perf_analysis_cli import PerfRegressionAnalysisCli, PerfRegressionSummaryCli
@@ -37,8 +38,10 @@ def get_project_version(project_path):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
 
-def build(commit, project_path, commit_dir):
-    build_error_file = f"{commit_dir}/build_failure"
+def build(commit, project_path):
+    broken_builds_dir = simulator.util.mkdir("broken-builds")
+
+    build_error_file = f"{broken_builds_dir}/{commit}"
     if os.path.exists(build_error_file):
         return False
 
@@ -109,7 +112,7 @@ def run_all(commits, runs, project_path, tests, debug):
             info(f"Building {commit}")
 
             if not commit_was_build:
-                if build(commit, project_path, commit_dir):
+                if build(commit, project_path):
                     commit_was_build = True
                 else:
                     builds_failed +=1
