@@ -40,7 +40,6 @@ def get_project_version(project_path):
 
 def build(commit, project_path):
     broken_builds_dir = simulator.util.mkdir("broken-builds")
-
     build_error_file = f"{broken_builds_dir}/{commit}"
     if os.path.exists(build_error_file):
         return False
@@ -69,6 +68,13 @@ def run(test, commit, runs, project_path, debug=False):
     info(f"Running {commit_dir}, runs {runs} ")
     info(f"Version:[{version}]")
     info(f"Test Duration: {test.get('duration')}")
+    warmup = test.get("warmup")
+    if not warmup:
+        warmup = 0
+    cooldown = test.get("cooldown")
+    if not cooldown:
+        cooldown = 0
+
     for i in range(0, runs):
         dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
         run_path = f"{commit_dir}/{dt}"
@@ -76,12 +82,15 @@ def run(test, commit, runs, project_path, debug=False):
 
         perftest = PerfTest(logfile=logfile_name, log_shell_command=debug)
         perftest.run_test(test, run_path=run_path, )
-        perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name})
+        perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name}, warmup=warmup, cooldown=cooldown)
 
 
 def run_all(commits, runs, project_path, tests, debug):
     if not tests:
         exit_with_error("No tests found.")
+
+    if not commits:
+        exit_with_error("No commits found.")
 
     info(f"Source dir {project_path}")
     info(f"Number of commits {len(commits)}")
@@ -115,8 +124,8 @@ def run_all(commits, runs, project_path, tests, debug):
                 if build(commit, project_path):
                     commit_was_build = True
                 else:
-                    builds_failed +=1
-                    info("Build failed, skipping runs.")
+                    builds_failed += 1
+                    info(f"Build failed, {builds_failed} out of {len(commits)}, skipping runs.")
                     break
 
             run(test, commit, remaining, project_path, debug)
@@ -124,6 +133,8 @@ def run_all(commits, runs, project_path, tests, debug):
     duration = now_seconds() - start
     info(f"Duration: {duration}s")
     info(f"Builds failed: {builds_failed}")
+    info(f"Builds failed: {100 * builds_failed / len(commits)}%")
+    info(f"Builds succeeded: {len(commits) - builds_failed}")
 
 
 class PerfRegTestRunCli:

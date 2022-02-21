@@ -164,21 +164,16 @@ def load_commit_dir(dir, commit):
 def pick_best_value(values, metric):
     best = None
 
-    print("==============")
     # ugly hack; need better mechanism
     if "(us)" in metric:
         for (commit, value) in values:
-            print(value)
             if not best or value < best[1]:
                 best = (commit, value)
     else:
         for (commit, value) in values:
-            print(value)
-            if not best or value > best[1]:
+             if not best or value > best[1]:
                 best = (commit, value)
 
-    print(f"metric={metric}")
-    print(f"best {best[1]}")
     return best
 
 
@@ -196,6 +191,7 @@ def ordered_commits(dir, git_dir):
 
 
 def load_ts_per_metric(dir, git_dir):
+    print("Loading data")
     y_map = {}
     x_map = {}
     for commit in ordered_commits(dir, git_dir):
@@ -213,8 +209,6 @@ def load_ts_per_metric(dir, git_dir):
                 x_map[metric_name] = x
             y.append(value)
             x.append(commit)
-            if len(x)>0:
-                print(len(x))
 
     result = {}
     for metric_name in y_map.keys():
@@ -269,6 +263,7 @@ class PerfRegressionAnalysisCli:
         print(f"Analysis results can be found in [{self.output}].")
 
     def make_report(self):
+        print("Making report")
         problems = {}
         commits = set()
         for metric, ts in self.ts_per_metric.items():
@@ -310,6 +305,7 @@ class PerfRegressionAnalysisCli:
         write(f"{self.output}/analysis.txt", text)
 
     def make_plots(self):
+        print("Making plots")
         for metric, ts in self.ts_per_metric.items():
             cps = self.changepoints_per_metric.get(metric)
             aps = self.anomalies_per_metric.get(metric)
@@ -318,16 +314,19 @@ class PerfRegressionAnalysisCli:
             plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=self.width, height=self.height)
 
     def anomaly_detection(self):
+        print("Anomaly detection")
         for metric, ts in self.ts_per_metric.items():
             aps = anomaly_detection(ts, min_history_length=10, max_n=4)
             self.anomalies_per_metric[metric] = aps
 
     def changepoint_detection(self):
+        print("Changepoint detection")
         for metric, ts in self.ts_per_metric.items():
             cps = changepoint_detection(ts)
             self.changepoints_per_metric[metric] = cps
 
     def trim(self):
+        print("Trimming data")
         if self.latest:
             for metric, ts in self.ts_per_metric.items():
                 self.ts_per_metric[metric] = ts.newest(self.latest)
