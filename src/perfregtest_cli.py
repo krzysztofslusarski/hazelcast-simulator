@@ -125,7 +125,7 @@ def run_all(commits, runs, project_path, tests, debug):
                     commit_was_build = True
                 else:
                     builds_failed += 1
-                    info(f"Build failed, {builds_failed} out of {len(commits)}, skipping runs.")
+                    info(f"Build failed, {builds_failed}/{len(commits)}, skipping runs.")
                     break
 
             run(test, commit, remaining, project_path, debug)
