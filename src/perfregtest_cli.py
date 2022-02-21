@@ -150,7 +150,7 @@ class PerfRegTestRunCli:
                             default=[3], type=int)
         parser.add_argument('-t', '--test', nargs=1,
                             help='The names of the tests to run. By default all tests are run.')
-        parser.add_argument("-r", "--randomize", help="Randomizes the commits", action='store_true')
+        parser.add_argument("--randomize", help="Randomizes the commits", action='store_true')
         parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
 
         args = parser.parse_args(argv)
