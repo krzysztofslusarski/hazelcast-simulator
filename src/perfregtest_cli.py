@@ -22,7 +22,7 @@ usage = '''perfregtest <command> [<args>]
 
 The available commands are:
     analyze             Analyzes the results of performance regression tests..
-    commit_sampler      Retrieves a sample of commits between a start and end commit.
+    commit_sampler      Creates a sample of commits between a start and end commit.
     commit_order        Returns an ordered list (from old to new) of commits.
     run                 Runs performance regression tests.
     summary             Shows a summary of a set of performance regression tests
