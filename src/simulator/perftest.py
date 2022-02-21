@@ -26,9 +26,11 @@ inventory_path = 'inventory.yaml'
 
 class PerfTest:
 
-    def __init__(self, logfile=None, log_shell_command=True):
+    def __init__(self, logfile=None, log_shell_command=True, exit_on_error=False):
         self.logfile = logfile
         self.log_shell_command = log_shell_command
+        self.exit_on_error = exit_on_error
+        self.exit_code = None
 
     def __kill_java(self, host):
         ssh = Ssh(public_ip(host), ssh_user(host), ssh_options(host))
@@ -128,10 +130,10 @@ class PerfTest:
                 tmp.write(f"{key}={value}\n")
             tmp.flush()
 
-            exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator {args} {tmp.name}")
-            if exitcode != 0:
-                exit_with_error(f"Failed run coordinator, exitcode={exitcode}")
-        return run_path
+            self.exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator {args} {tmp.name}")
+            if self.exitcode != 0 and self.exit_on_error:
+                exit_with_error(f"Failed run coordinator, exitcode={self.exitcode}")
+            return self.exitcode
 
     def run(self, tests, tags):
         for test in tests:

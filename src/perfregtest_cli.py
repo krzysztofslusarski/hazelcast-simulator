@@ -81,10 +81,12 @@ def run(test, commit, runs, project_path, debug=False):
         run_path = f"{commit_dir}/{dt}"
         info(f"{i + 1} {run_path}")
 
-        perftest = PerfTest(logfile=logfile_name, log_shell_command=debug)
-        perftest.run_test(test, run_path=run_path, )
-        perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name}, warmup=warmup, cooldown=cooldown)
-
+        perftest = PerfTest(logfile=logfile_name, log_shell_command=debug, exit_on_error=False)
+        perftest.run_test(test, run_path=run_path)
+        if perftest.exitcode==0:
+            perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name}, warmup=warmup, cooldown=cooldown)
+        else:
+            info("Test failure was detected")
 
 def run_all(commits, runs, project_path, tests, debug):
     if not tests:
