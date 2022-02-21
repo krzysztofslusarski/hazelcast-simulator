@@ -5,6 +5,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.simulator.hz.HazelcastTest;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;
+import com.hazelcast.simulator.test.annotations.TimeStep;
 import com.hazelcast.simulator.worker.loadsupport.Streamer;
 import com.hazelcast.simulator.worker.loadsupport.StreamerFactory;
 import com.hazelcast.sql.SqlResult;
@@ -56,8 +57,8 @@ public class SerializeRegressionTest extends HazelcastTest {
         }
     }
 
-    @Test
-    public void test() {
+    @TimeStep(prob = 1)
+    public void select() {
         String sql = " SELECT * FROM  \n" + name + " " +
                 " WHERE doubleValue1 = 0.1 \n" +
                 " OR doubleValue1 = 0.2 \n" +
