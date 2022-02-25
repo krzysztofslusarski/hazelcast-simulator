@@ -27,6 +27,11 @@ def write(file, text):
         return f.write(text)
 
 
+def write_yaml(file, content):
+    with open(file, 'w') as f:
+        yaml.dump(content, f)
+
+
 def now_seconds():
     return round(time.time())
 

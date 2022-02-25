@@ -1,3 +1,18 @@
+To install simulator, run
+
+```
+./install
+```
+
+The following products need to be installed:
+
+- Terraform
+- Ansible
+- Python 3.8 or newer
+- Gnuplot
+
+THe following python libraries are needed:
+
 pip3 install -U pyyaml
 pip3 install -U matplotlib
 pip3 install -U signal-processing-algorithms

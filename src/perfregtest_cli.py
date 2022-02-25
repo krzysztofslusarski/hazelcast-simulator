@@ -45,6 +45,7 @@ def build(commit, project_path):
     if os.path.exists(build_error_file):
         return False
 
+    start = now_seconds()
     exitcode = shell_logged(f"""
         set -e
         cd {project_path}
@@ -53,8 +54,9 @@ def build(commit, project_path):
         git checkout {commit}
         mvn clean install -DskipTests -Dquick
     """, log_file=logfile_name)
-
     if exitcode == 0:
+        duration = now_seconds() - start
+        info(f"Build time: {duration}s")
         return True
     else:
         open(build_error_file, "w").close()
@@ -83,10 +85,11 @@ def run(test, commit, runs, project_path, debug=False):
 
         perftest = PerfTest(logfile=logfile_name, log_shell_command=debug, exit_on_error=False)
         perftest.run_test(test, run_path=run_path)
-        if perftest.exitcode==0:
+        if perftest.exitcode == 0:
             perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name}, warmup=warmup, cooldown=cooldown)
         else:
             info("Test failure was detected")
+
 
 def run_all(commits, runs, project_path, tests, debug):
     if not tests:
@@ -103,7 +106,7 @@ def run_all(commits, runs, project_path, tests, debug):
     builds_failed = 0
     for commitIndex, commit in enumerate(commits):
         commit_was_build = False
-        c = commit_sampler.to_commit(f"{project_path}/.git", commit)
+        c = commit_sampler.to_full_commit(f"{project_path}/.git", commit)
         if not c.startswith(commit):
             info(f"{commit}->{c}")
             commit = c
