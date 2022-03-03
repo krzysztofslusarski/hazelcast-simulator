@@ -8,7 +8,8 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
-from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
+from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive, get_energy_statistics, \
+    get_energy_statistics_and_probabilities
 
 import commit_sorter
 from simulator.log import info, log_header
@@ -48,15 +49,8 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900):
-    if cps and aps:
-        plt.title(f"Changepoints and anomalies: {ts.name}")
-    elif cps:
-        plt.title(f"Changepoints: {ts.name}")
-    elif aps:
-        plt.title(f"Anomalies: {ts.name}")
-    else:
-        plt.title(f"{ts.name}")
+def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900, title="Changepoint and anomalies"):
+    plt.title(f"{title}: {ts.name}")
 
     my_dpi = 96
     plt.figure(figsize=(width / my_dpi, height / my_dpi), dpi=my_dpi)
@@ -221,6 +215,14 @@ def load_ts_per_metric(dir, git_dir):
 
 def changepoint_detection(ts, permutations=100, pvalue=0.05):
     indices = e_divisive(ts.y, permutations=permutations, pvalue=pvalue)
+
+
+    if indices:
+        i = indices[0]
+        x = ts.y[0:i]
+        y = ts.y[i:]
+        print(get_energy_statistics_and_probabilities(x, y))
+
     result = []
     for i in indices:
         result.append(ChangePoint(i, None))
@@ -244,7 +246,7 @@ class PerfRegressionAnalysisCli:
                             help="The number of permutations for the change point detection", type=int, default=100)
         parser.add_argument("--pvalue", nargs=1,
                             help="The pvalue for the change point detection", type=float, default=0.05)
-        parser.add_argument("--n_std_threshold", nargs=1,
+        parser.add_argument("--n_std_treshhold", nargs=1,
                             help="The number of standard deviations away from the mean to be considered an anomaly",
                             type=float, default=4)
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1,

@@ -9,16 +9,14 @@ from datetime import datetime
 import os
 from os import path
 
-import yaml
 import csv
 
 from load_hosts import load_hosts
 from simulator.hosts import public_ip, ssh_user, ssh_options
 from simulator.ssh import Ssh, new_key
 from simulator.util import read, write, shell, run_parallel, exit_with_error, simulator_home, shell_logged, remove, \
-    load_yaml_file, parse_tags
+    load_yaml_file, parse_tags, write_yaml
 from simulator.log import info, warn, log_header
-
 
 default_tests_path = 'tests.yaml'
 inventory_path = 'inventory.yaml'
@@ -143,7 +141,10 @@ class PerfTest:
 
             for i in range(0, repetitions):
                 run_path = self.run_test(test)
-                self.collect(run_path, tags)
+                self.collect(run_path,
+                             tags,
+                             warmup_seconds=test.get('warmup_seconds'),
+                             cooldown_seconds=test.get('cooldown_seconds'))
         return
 
     def run_test(self, test, run_path=None):
@@ -186,11 +187,17 @@ class PerfTest:
         else:
             return shell(cmd, use_print=True)
 
-    def collect(self, dir, tags, warmup=0, cooldown=0):
+    def collect(self, dir, tags, warmup_seconds=None, cooldown_seconds=None):
         report_dir = f"{dir}/report"
 
+        if not warmup_seconds:
+            warmup_seconds = 0
+
+        if not cooldown_seconds:
+            cooldown_seconds = 0
+
         if not os.path.exists(report_dir):
-            self.__shell(f"perftest report  -w {warmup} -c {cooldown} -o {report_dir} {dir}")
+            self.__shell(f"perftest report  -w {warmup_seconds} -c {cooldown_seconds} -o {report_dir} {dir}")
 
         csv_path = f"{report_dir}/report.csv"
         if not os.path.exists(csv_path):
@@ -225,8 +232,7 @@ class PerfTest:
                     'throughput': row[14]}
                 results[row[1]] = {'tags': tags, 'measurements': measurements}
 
-        with open(f"{dir}/results.yaml", 'w') as results_yml:
-            yaml.dump(results, results_yml)
+        write_yaml(f"{dir}/results.yaml", results)
 
 
 class PerftestCreateCli:
@@ -364,7 +370,7 @@ class PerftestRunCli:
 
         args = parser.parse_args(argv)
         tags = parse_tags(args.tag)
-        #run_path = args.runPath
+        # run_path = args.runPath
 
         tests = load_yaml_file(args.file)
         perftest = PerfTest()
@@ -519,14 +525,10 @@ class PerftestExecCli:
             client_type=args.clientType,
             skip_download=args.skipDownload)
 
-        warmup = test.get("warmup")
-        if not warmup:
-            warmup = 0
-        cooldown = test.get("cooldown")
-        if not cooldown:
-            cooldown = 0
-
-        perftest.collect(run_path, tags, warmup=warmup, cooldown=cooldown)
+        perftest.collect(run_path,
+                         tags,
+                         warmup_seconds=test.get("warmup_seconds"),
+                         cooldown_seconds=test.get("cooldown_seconds"))
 
 
 class PerftestKillJavaCli:
@@ -552,15 +554,16 @@ class PerftestCollectCli:
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         parser.add_argument('-w', '--warmup', nargs=1, default=[0], type=int,
                             help='The warmup period in seconds. The warmup removes datapoints from the start.')
+        parser.add_argument('-c', '--cooldown', nargs=1, default=[0], type=int,
+                            help='The cooldown period in seconds. The cooldown removes datapoints from the end.')
 
         args = parser.parse_args(argv)
 
         tags = parse_tags(args.tag)
 
         log_header("perftest collect")
-        warmup = args.warmup
         perftest = PerfTest()
-        perftest.collect(args.dir, tags, warmup=warmup)
+        perftest.collect(args.dir, tags, warmup_seconds=args.warmup, cooldown_seconds=args.cooldown)
 
         log_header("perftest collect: done")
 

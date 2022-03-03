@@ -2,9 +2,8 @@ import json
 import os
 from os import path
 import subprocess
-import yaml
 
-from simulator.util import shell, exit_with_error, read
+from simulator.util import shell, exit_with_error, read, write_yaml
 from simulator.log import info
 
 
@@ -67,9 +66,7 @@ def terraform_import(terraform_plan):
             inventory[group_name] = hosts
 
     info("Creating [inventory.yaml]")
-    with open("inventory.yaml", 'w') as f:
-        yaml.dump(inventory, f)
-
+    write_yaml("inventory.yaml", inventory)
     info(read("inventory.yaml"))
 
 

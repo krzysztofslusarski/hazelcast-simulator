@@ -12,7 +12,7 @@ import simulator.util
 from commit_sampler import CommitSamplerCli
 from commit_sorter import CommitOrderCli
 from perf_analysis_cli import PerfRegressionAnalysisCli, PerfRegressionSummaryCli
-from simulator.log import info, log_header
+from simulator.log import info, log_header, warn
 from simulator.perftest import PerfTest
 from simulator.util import shell_logged, now_seconds, validate_dir, load_yaml_file, exit_with_error
 
@@ -66,17 +66,13 @@ def build(commit, project_path):
 def run(test, commit, runs, project_path, debug=False):
     version = get_project_version(project_path)
     test_name = test['name']
+    if test.get('version'):
+        warn(f"Ignoring version [{test['version']} in test [{test_name}]")
     test['version'] = f"maven={version}"
     commit_dir = f"runs/{test_name}/{commit}"
     info(f"Running {commit_dir}, runs {runs} ")
     info(f"Version:[{version}]")
     info(f"Test Duration: {test.get('duration')}")
-    warmup = test.get("warmup")
-    if not warmup:
-        warmup = 0
-    cooldown = test.get("cooldown")
-    if not cooldown:
-        cooldown = 0
 
     for i in range(0, runs):
         dt = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
@@ -86,7 +82,10 @@ def run(test, commit, runs, project_path, debug=False):
         perftest = PerfTest(logfile=logfile_name, log_shell_command=debug, exit_on_error=False)
         perftest.run_test(test, run_path=run_path)
         if perftest.exitcode == 0:
-            perftest.collect(f"{run_path}", {'commit': commit, "testname": test_name}, warmup=warmup, cooldown=cooldown)
+            perftest.collect(f"{run_path}",
+                             {'commit': commit, "testname": test_name},
+                             warmup_seconds=test.get('warmup_seconds'),
+                             cooldown_seconds=test.get('cooldown_seconds'))
         else:
             info("Test failure was detected")
 
