@@ -88,7 +88,8 @@ public class TestManager {
             throw new IllegalArgumentException(format("Could not stop test, test [%s] is not found.", testId));
         }
 
-        testContainer.getTestContext().stop();
+
+        testContainer.stop();
     }
 
     public void startTestPhase(StartPhaseOperation op, Promise promise) throws Exception {

@@ -92,7 +92,7 @@ public class ThreadSpawnerTest {
     public void testInterrupt() {
         ThreadSpawner spawner = new ThreadSpawner("AnyTestCaseId", true);
         spawner.spawn(sleepInfiniteRunnable);
-        spawner.interrupt();
+        spawner.interruptAll();
         spawner.awaitCompletion();
     }
 

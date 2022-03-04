@@ -137,7 +137,7 @@ public class ThreadSpawner {
     /**
      * Interrupts all running threads.
      */
-    public void interrupt() {
+    public void interruptAll() {
         for (Thread thread : threads) {
             thread.interrupt();
         }

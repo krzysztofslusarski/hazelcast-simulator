@@ -6,9 +6,9 @@ import javax.tools.JavaFileObject;
 
 import static org.mockito.Mockito.mock;
 
-public class TimeStepRunnerCodeGeneratorTest {
+public class TimeStepLoopCodeGeneratorTest {
 
-    private TimeStepRunnerCodeGenerator codeGenerator = new TimeStepRunnerCodeGenerator();
+    private TimeStepLoopCodeGenerator codeGenerator = new TimeStepLoopCodeGenerator();
 
     @Test(expected = IllegalStateException.class)
     public void testCompile_whenCompilerIsNull_thenThrowIllegalStateException() {

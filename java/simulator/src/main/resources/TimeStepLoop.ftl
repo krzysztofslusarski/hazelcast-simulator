@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-public class ${className} extends TimeStepRunner {
+public class ${className} extends TimeStepLoop {
 
 <#if metronomeClass??>
 </#if>

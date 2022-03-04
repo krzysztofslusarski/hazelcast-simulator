@@ -37,15 +37,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.simulator.utils.CommonUtils.sleepMillisThrowException;
 import static com.hazelcast.simulator.utils.FileUtils.getUserDir;
 import static com.hazelcast.simulator.utils.FileUtils.locatePythonFile;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
-    private static final long PARTITION_WARMUP_TIMEOUT_NANOS = TimeUnit.MINUTES.toNanos(5);
+    private static final long PARTITION_WARMUP_TIMEOUT_NANOS = MINUTES.toNanos(5);
     private static final int PARTITION_WARMUP_SLEEP_INTERVAL_MILLIS = 500;
     private static final Logger LOGGER = Logger.getLogger(Hazelcast4PlusDriver.class);
     private HazelcastInstance hazelcastInstance;
@@ -246,7 +246,22 @@ public class Hazelcast4PlusDriver extends Driver<HazelcastInstance> {
         LOGGER.info("Stopping HazelcastInstance...");
 
         if (hazelcastInstance != null) {
-            hazelcastInstance.shutdown();
+            Thread t = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        hazelcastInstance.shutdown();
+                    } catch (Exception e) {
+                        LOGGER.error(e);
+                    }
+                }
+            };
+            t.start();
+            try {
+                t.join(MINUTES.toMillis(2));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

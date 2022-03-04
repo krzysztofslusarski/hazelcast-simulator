@@ -15,21 +15,20 @@
  */
 package com.hazelcast.simulator.worker.testcontainer;
 
-import java.util.concurrent.Callable;
-
 /**
- * A RunStrategy encapsulates the logic for the 3 different types of test running approaches:
+ * A RunStrategy encapsulates the logic for the 2 different types of test running approaches:
  * <ol>
  * <li>{@link com.hazelcast.simulator.test.annotations.Run}</li>
  * <li>{@link com.hazelcast.simulator.test.annotations.TimeStep}</li>
  * </ol>
  */
-abstract class RunStrategy {
+abstract class TestRunner {
 
+    protected boolean stop = false;
     private volatile boolean running;
     private volatile long startedMillis;
 
-    public abstract Callable getRunCallable();
+    public abstract void run() throws Exception;
 
     /**
      * Returns the number of iterations of all the executions. Value is 0 if it isn't tracked, or the information is only
@@ -65,6 +64,13 @@ abstract class RunStrategy {
      */
     final void onRunCompleted() {
         running = false;
+    }
+
+    /**
+     * Notifies the RunStrategy the test should be stopped.
+     */
+    public void stop(){
+        stop = true;
     }
 
     /**

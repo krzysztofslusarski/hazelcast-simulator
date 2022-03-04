@@ -76,7 +76,7 @@ public class TestContainer {
     private final Map<TestPhase, Callable> taskPerPhaseMap = new HashMap<>();
     private final PropertyBinding propertyBinding;
     private final Class testClass;
-    private final RunStrategy runStrategy;
+    private final TestRunner runner;
     private final TestPerformanceTracker testPerformanceTracker;
     private final AtomicReference<TestPhase> currentPhase = new AtomicReference<>();
 
@@ -105,13 +105,18 @@ public class TestContainer {
         this.testClass = testInstance.getClass();
         propertyBinding.bind(testInstance);
 
-        this.runStrategy = loadRunStrategy();
+        this.runner = loadRunStrategy();
 
         registerTestPhaseTasks();
 
         propertyBinding.ensureNoUnusedProperties();
 
         this.testPerformanceTracker = new TestPerformanceTracker(this);
+    }
+
+    public void stop(){
+        testContext.stop();
+        runner.stop();
     }
 
     public TestPhase getCurrentPhase() {
@@ -155,15 +160,15 @@ public class TestContainer {
     }
 
     public long getRunStartedMillis() {
-        return runStrategy == null ? 0 : runStrategy.getStartedMillis();
+        return runner == null ? 0 : runner.getStartedMillis();
     }
 
     public boolean isRunning() {
-        return runStrategy == null ? false : runStrategy.isRunning();
+        return runner == null ? false : runner.isRunning();
     }
 
     public long iteration() {
-        return runStrategy == null ? 0 : runStrategy.iterations();
+        return runner == null ? 0 : runner.iterations();
     }
 
     public Map<String, Probe> getProbeMap() {
@@ -208,7 +213,8 @@ public class TestContainer {
                     Probe probe = propertyBinding.getOrCreateProbe("jitter", false);
                     new JitterThread(testContext, probe, propertyBinding.recordJitterThresholdNs).start();
                 }
-                return runStrategy.getRunCallable().call();
+                runner.run();
+                return null;
             });
 
             registerTask(Verify.class, new VerifyFilter(false), LOCAL_VERIFY);
@@ -257,10 +263,10 @@ public class TestContainer {
         taskPerPhaseMap.put(SETUP, new CompositeCallable(callableList));
     }
 
-    private RunStrategy loadRunStrategy() {
+    private TestRunner loadRunStrategy() {
         try {
             List<String> runAnnotations = new LinkedList<>();
-            RunStrategy runStrategy = null;
+            TestRunner runStrategy = null;
 
             Method runMethod = new AnnotatedMethodRetriever(testClass, Run.class)
                     .withoutArgs()
@@ -269,14 +275,14 @@ public class TestContainer {
                     .find();
             if (runMethod != null) {
                 runAnnotations.add(Run.class.getName());
-                runStrategy = new PrimordialRunStrategy(testInstance, runMethod);
+                runStrategy = new PrimordialRunner(testInstance, runMethod);
             }
 
             List<Method> timeStepMethods = new AnnotatedMethodRetriever(testClass, TimeStep.class)
                     .findAll();
             if (!timeStepMethods.isEmpty()) {
                 runAnnotations.add(TimeStep.class.getName());
-                runStrategy = new TimeStepRunStrategy(this);
+                runStrategy = new TimeStepRunner(this);
             }
 
             if (runAnnotations.size() == 0) {

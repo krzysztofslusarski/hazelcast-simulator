@@ -53,7 +53,7 @@ import static java.security.AccessController.doPrivileged;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
-class TimeStepRunnerCodeGenerator {
+class TimeStepLoopCodeGenerator {
 
     private final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
     private final File targetDirectory = new File(getUserDir(), "timestep-worker-classes");
@@ -87,7 +87,7 @@ class TimeStepRunnerCodeGenerator {
 
     Class compile(JavaCompiler compiler, JavaFileObject file, final String className) {
         if (compiler == null) {
-            throw new IllegalStateException("Could not get Java compiler in TimeStepRunnerCodeGenerator."
+            throw new IllegalStateException("Could not get Java compiler in TimeStepLoopCodeGenerator."
                     + " You need to use a JDK to run Simulator! Version found: " + System.getProperty("java.version"));
         }
 
@@ -163,7 +163,7 @@ class TimeStepRunnerCodeGenerator {
                 root.put("hasIterationCap", "true");
             }
 
-            Template temp = cfg.getTemplate("TimeStepRunner.ftl");
+            Template temp = cfg.getTemplate("TimeStepLoop.ftl");
             StringWriter out = new StringWriter();
             temp.process(root, out);
 
