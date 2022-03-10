@@ -66,10 +66,10 @@ class PerfTest:
 
         args = ""
 
-        if worker_vm_startup_delay_ms:
+        if worker_vm_startup_delay_ms is not None:
             args = f"{args} --workerVmStartupDelayMs {worker_vm_startup_delay_ms}"
 
-        if dedicated_member_machines:
+        if dedicated_member_machines is not None:
             args = f"{args} --dedicatedMemberMachines {dedicated_member_machines}"
 
         if parallel:
@@ -84,7 +84,7 @@ class PerfTest:
         if run_path:
             args = f"{args} --runPath {run_path}"
 
-        if duration:
+        if duration is not None:
             args = f"{args} --duration {duration}"
 
         if performance_monitor_interval_seconds:
@@ -96,13 +96,14 @@ class PerfTest:
         if loadgenerator_hosts:
             args = f"{args} --loadGeneratorHosts {loadgenerator_hosts}"
 
-        if members:
+        if members is not None:
+            print(f"members: ---------------------------")
             args = f"{args} --members {members}"
 
         if member_args:
             args = f"""{args} --memberArgs "{member_args}" """
 
-        if clients:
+        if clients is not None:
             args = f"{args} --clients {clients}"
 
         if client_args:
@@ -114,7 +115,7 @@ class PerfTest:
         if driver:
             args = f"{args} --driver {driver}"
 
-        if version:
+        if version is not None:
             args = f"""{args} --version "{version}"  """
 
         if fail_fast:
@@ -140,11 +141,13 @@ class PerfTest:
                 repetitions = 1
 
             for i in range(0, repetitions):
-                run_path = self.run_test(test)
-                self.collect(run_path,
-                             tags,
-                             warmup_seconds=test.get('warmup_seconds'),
-                             cooldown_seconds=test.get('cooldown_seconds'))
+                exitcode, run_path = self.run_test(test)
+
+                if exitcode == 0:
+                    self.collect(run_path,
+                                 tags,
+                                 warmup_seconds=test.get('warmup_seconds'),
+                                 cooldown_seconds=test.get('cooldown_seconds'))
         return
 
     def run_test(self, test, run_path=None):
@@ -153,7 +156,7 @@ class PerfTest:
             name = test['name']
             run_path = f"runs/{name}/{dt}"
 
-        self.exec(
+        exitcode = self.exec(
             test['test'],
             run_path=run_path,
             duration=test.get('duration'),
@@ -163,7 +166,7 @@ class PerfTest:
             license_key=test.get('license_key'),
             client_args=test.get('client_args'),
             member_args=test.get('member_args'),
-            members=test['members'],
+            members=test.get('members'),
             clients=test.get('clients'),
             driver=test.get('driver'),
             version=test.get('version'),
@@ -171,7 +174,7 @@ class PerfTest:
             verify_enabled=test.get('verify_enabled'),
             client_type=test.get('client_type'))
 
-        return run_path
+        return exitcode, run_path
 
     def clean(self):
         exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator --clean")

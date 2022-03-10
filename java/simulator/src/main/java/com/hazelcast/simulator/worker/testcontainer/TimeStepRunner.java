@@ -49,7 +49,7 @@ class TimeStepRunner extends TestRunner {
     private final ThreadSpawner spawner;
     private volatile TimeStepLoop[] loops;
     private final Map<String, MetronomeSupplier> metronomeSettingsMap = new HashMap<>();
-    private final Map<String, Class> runnerClassMap = new HashMap<>();
+    private final Map<String, Class> loopClassMap = new HashMap<>();
     private final Map<String, Integer> threadCountMap = new HashMap<>();
     private final Map<String, Long> runIterationMap = new HashMap<>();
     private int totalThreadCount;
@@ -78,7 +78,7 @@ class TimeStepRunner extends TestRunner {
             long iterations = binding.loadAsLong(toPropertyName(executionGroup, "iterations"), 0);
             runIterationMap.put(executionGroup, iterations);
 
-            Class runnerClass = new TimeStepLoopCodeGenerator().compile(
+            Class loopClass = new TimeStepLoopCodeGenerator().compile(
                     testContainer.getTestCase().getId(),
                     executionGroup,
                     timeStepModel,
@@ -88,7 +88,7 @@ class TimeStepRunner extends TestRunner {
                     logRateMs,
                     iterations > 0);
 
-            runnerClassMap.put(executionGroup, runnerClass);
+            loopClassMap.put(executionGroup, loopClass);
         }
     }
 
@@ -155,7 +155,7 @@ class TimeStepRunner extends TestRunner {
 
         int k = 0;
         for (String executionGroup : timeStepModel.getExecutionGroups()) {
-            Class runnerClass = runnerClassMap.get(executionGroup);
+            Class runnerClass = loopClassMap.get(executionGroup);
             Constructor<TimeStepLoop> constructor = runnerClass
                     .getConstructor(testInstance.getClass(), TimeStepModel.class, String.class);
 

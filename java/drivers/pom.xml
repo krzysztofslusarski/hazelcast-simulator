@@ -31,8 +31,8 @@
         <module>driver-couchbase</module>
         <module>driver-memcached</module>
         <module>driver-mongodb</module>
-        <module>driver-lettuce5</module>
-        <module>driver-lettucecluster5</module>
+        <module>driver-lettuce6</module>
+        <module>driver-lettucecluster6</module>
         <module>driver-jedis3</module>
     </modules>
 </project>

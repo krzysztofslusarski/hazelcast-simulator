@@ -16,7 +16,7 @@
 package com.hazelcast.simulator.worker.testcontainer;
 
 /**
- * A RunStrategy encapsulates the logic for the 2 different types of test running approaches:
+ * A TestRunner is responsible for running a test.
  * <ol>
  * <li>{@link com.hazelcast.simulator.test.annotations.Run}</li>
  * <li>{@link com.hazelcast.simulator.test.annotations.TimeStep}</li>
@@ -28,11 +28,18 @@ abstract class TestRunner {
     private volatile boolean running;
     private volatile long startedMillis;
 
+    /**
+     * Runs the test.
+     *
+     * @throws Exception if there was a problem running the test.
+     */
     public abstract void run() throws Exception;
 
     /**
      * Returns the number of iterations of all the executions. Value is 0 if it isn't tracked, or the information is only
      * available through Probes.
+     *
+     * This method is thread-safe.
      *
      * @return the number of operations.
      */
@@ -68,19 +75,21 @@ abstract class TestRunner {
 
     /**
      * Notifies the RunStrategy the test should be stopped.
+     *
+     * This method is thread-safe.
      */
     public void stop(){
         stop = true;
     }
 
     /**
-     * Returns the timestap when the test started running. As long as the test has not started, the returned value is 0.
+     * Returns the timestamp when the test started running. As long as the test has not started, the returned value is 0.
      *
      * This method is thread-safe.
      *
      * @return the started timestamp.
      */
-    final long getStartedMillis() {
+    final long startedMillis() {
         return startedMillis;
     }
 }

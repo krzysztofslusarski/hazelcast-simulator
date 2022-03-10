@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.simulator.lettucecluster5.sync;
+package com.hazelcast.simulator.lettucecluster6.sync;
 
-import com.hazelcast.simulator.lettucecluster5.LettuceTest;
+import com.hazelcast.simulator.lettucecluster6.LettuceTest;
 import com.hazelcast.simulator.test.BaseThreadState;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;

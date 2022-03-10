@@ -105,7 +105,7 @@ public class TestContainer {
         this.testClass = testInstance.getClass();
         propertyBinding.bind(testInstance);
 
-        this.runner = loadRunStrategy();
+        this.runner = newRunner();
 
         registerTestPhaseTasks();
 
@@ -160,7 +160,7 @@ public class TestContainer {
     }
 
     public long getRunStartedMillis() {
-        return runner == null ? 0 : runner.getStartedMillis();
+        return runner == null ? 0 : runner.startedMillis();
     }
 
     public boolean isRunning() {
@@ -263,26 +263,27 @@ public class TestContainer {
         taskPerPhaseMap.put(SETUP, new CompositeCallable(callableList));
     }
 
-    private TestRunner loadRunStrategy() {
+    private TestRunner newRunner() {
         try {
             List<String> runAnnotations = new LinkedList<>();
-            TestRunner runStrategy = null;
 
             Method runMethod = new AnnotatedMethodRetriever(testClass, Run.class)
                     .withoutArgs()
                     .withVoidReturnType()
                     .withPublicNonStaticModifier()
                     .find();
+
+            TestRunner runner = null;
             if (runMethod != null) {
                 runAnnotations.add(Run.class.getName());
-                runStrategy = new PrimordialRunner(testInstance, runMethod);
+                runner = new PrimordialRunner(testInstance, runMethod);
             }
 
             List<Method> timeStepMethods = new AnnotatedMethodRetriever(testClass, TimeStep.class)
                     .findAll();
             if (!timeStepMethods.isEmpty()) {
                 runAnnotations.add(TimeStep.class.getName());
-                runStrategy = new TimeStepRunner(this);
+                runner = new TimeStepRunner(this);
             }
 
             if (runAnnotations.size() == 0) {
@@ -293,7 +294,7 @@ public class TestContainer {
                 throw new IllegalTestException("Test has more than one run strategy, found the following annotations: "
                         + runAnnotations);
             } else {
-                return runStrategy;
+                return runner;
             }
         } catch (IllegalTestException e) {
             throw rethrow(e);

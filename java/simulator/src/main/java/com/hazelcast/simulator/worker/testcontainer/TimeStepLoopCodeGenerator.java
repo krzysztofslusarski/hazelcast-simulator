@@ -56,7 +56,7 @@ import static java.util.Collections.singletonList;
 class TimeStepLoopCodeGenerator {
 
     private final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-    private final File targetDirectory = new File(getUserDir(), "timestep-worker-classes");
+    private final File targetDirectory = new File(getUserDir(), "timestep-loop-classes");
 
     Class compile(
             String testCaseId,
@@ -75,7 +75,7 @@ class TimeStepLoopCodeGenerator {
             className += "_" + executionGroup + "_";
 
         }
-        className += "Runner";
+        className += "Loop";
 
         if (!"".equals(testCaseId)) {
             className += testCaseId;

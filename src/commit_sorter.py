@@ -1,10 +1,10 @@
 #!/usr/bin/python3
+import argparse
 import os
 import subprocess
 import tempfile
-import argparse
 
-from simulator.util import validate_dir, validate_git_dir
+from simulator.util import validate_git_dir
 
 
 def load_commits(git_dir):

@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>driver-lettuce5</artifactId>
-    <name>Simulator Driver Lettuce 5.x</name>
+    <artifactId>driver-lettucecluster6</artifactId>
+    <name>Simulator Driver Lettuce Cluster 6.x</name>
 
     <parent>
         <groupId>com.hazelcast.simulator</groupId>
@@ -18,7 +18,7 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
-       <lettuce.version>5.2.2.RELEASE</lettuce.version>
+        <lettuce.version>6.1.6.RELEASE</lettuce.version>
     </properties>
 
     <build>
@@ -26,7 +26,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>${maven-dependency-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -53,13 +53,20 @@
             <groupId>com.hazelcast.simulator</groupId>
             <artifactId>simulator</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
             <version>${lettuce.version}</version>
+        </dependency>
+
+        <!-- already provided by simulator -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.21</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

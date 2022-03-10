@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import random
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -39,28 +40,57 @@ def get_project_version(project_path):
     return subprocess.check_output(cmd, shell=True, text=True).strip()
 
 
-def build(commit, project_path):
-    broken_builds_dir = simulator.util.mkdir("broken-builds")
-    build_error_file = f"{broken_builds_dir}/{commit}"
-    if os.path.exists(build_error_file):
-        return False
+@dataclass
+class BuildStats:
+    count: int = 0
+    success: int = 0
+    failed: int = 0
+    skipped: int = 0
 
+
+def build(commit, build_path):
+    info(f"Building {build_path} {commit}")
     start = now_seconds()
     exitcode = shell_logged(f"""
         set -e
-        cd {project_path}
+        cd {build_path}
         git fetch --all --tags
         git reset --hard
         git checkout {commit}
         mvn clean install -DskipTests -Dquick
     """, log_file=logfile_name)
     if exitcode == 0:
-        duration = now_seconds() - start
-        info(f"Build time: {duration}s")
+        info(f"Build time: {now_seconds() - start}s")
         return True
     else:
-        open(build_error_file, "w").close()
         return False
+
+
+def build_all(commit_tuple, build_paths, build_stats: BuildStats):
+    success = True
+    build_stats.count += 1
+    remaining = len(commit_tuple)
+    for i in range(0, len(commit_tuple)):
+        commit = commit_tuple[i]
+        build_path = build_paths[i]
+        broken_builds_dir = simulator.util.mkdir("broken-builds")
+        build_error_file = f"{broken_builds_dir}/{':'.join(commit_tuple)} "
+        if os.path.exists(build_error_file):
+            build_stats.failed += remaining
+            build_stats.skipped += remaining
+            warn(f"Skipping {build_path} {commit}, previous build-failure found.")
+            return False
+
+        if not build(commit, build_path):
+            warn(f"Failed to build {build_path} {commit}.")
+            build_stats.failed += remaining
+            build_stats.skipped += remaining - 1
+            open(build_error_file, "w").close()
+            return False
+        remaining -= 1
+        build_stats.success += 1
+
+    return success
 
 
 def run(test, commit, runs, project_path, debug=False):
@@ -80,8 +110,8 @@ def run(test, commit, runs, project_path, debug=False):
         info(f"{i + 1} {run_path}")
 
         perftest = PerfTest(logfile=logfile_name, log_shell_command=debug, exit_on_error=False)
-        perftest.run_test(test, run_path=run_path)
-        if perftest.exitcode == 0:
+        exitcode, run_path = perftest.run_test(test, run_path=run_path)
+        if exitcode == 0:
             perftest.collect(f"{run_path}",
                              {'commit': commit, "testname": test_name},
                              warmup_seconds=test.get('warmup_seconds'),
@@ -90,22 +120,22 @@ def run(test, commit, runs, project_path, debug=False):
             info("Test failure was detected")
 
 
-def run_all(commits, runs, project_path, tests, debug):
+def run_all(commit_tuples, runs, build_paths, tests, debug):
     if not tests:
         exit_with_error("No tests found.")
 
-    if not commits:
+    if not commit_tuples:
         exit_with_error("No commits found.")
 
-    info(f"Source dir {project_path}")
-    info(f"Number of commits {len(commits)}")
+    info(f"Number of builds {len(commit_tuples)}")
     info(f"Tests to execute: {[t['name'] for t in tests]}")
 
     start = now_seconds()
-    builds_failed = 0
-    for commitIndex, commit in enumerate(commits):
-        commit_was_build = False
-        c = commit_sampler.to_full_commit(f"{project_path}/.git", commit)
+    build_stats = BuildStats()
+    for commitIndex, commit_tuple in enumerate(commit_tuples):
+        build_success = False
+        commit = commit_tuple[-1]
+        c = commit_sampler.to_full_commit(f"{build_paths[-1]}/.git", commit)
         if not c.startswith(commit):
             info(f"{commit}->{c}")
             commit = c
@@ -122,24 +152,22 @@ def run_all(commits, runs, project_path, tests, debug):
 
             log_header(f"Commit {commit}")
             start_test = now_seconds()
-            info(f"Commit {commitIndex + 1}/{len(commits)}")
-            info(f"Building {commit}")
 
-            if not commit_was_build:
-                if build(commit, project_path):
-                    commit_was_build = True
+            if not build_success:
+                if build_all(commit_tuple, build_paths, build_stats):
+                    build_success = True
                 else:
-                    builds_failed += 1
-                    info(f"Build failed, {builds_failed}/{len(commits)}, skipping runs.")
+                    info(f"Build failed {build_stats.failed}/{build_stats.count}, skipping runs.")
                     break
 
-            run(test, commit, remaining, project_path, debug)
+            # run(test, commit, remaining, project_paths[-1], debug)
             info(f"Testing {test_name} took {now_seconds() - start_test}s")
     duration = now_seconds() - start
     info(f"Duration: {duration}s")
-    info(f"Builds failed: {builds_failed}")
-    info(f"Builds failed: {100 * builds_failed / len(commits)}%")
-    info(f"Builds succeeded: {len(commits) - builds_failed}")
+    info(f"Builds total: {build_stats.count}")
+    info(f"Builds failed: {build_stats.failed}")
+    info(f"Builds skipped: {build_stats.skipped}")
+    info(f"Builds succeeded: {100 * build_stats.success / build_stats.count}%")
 
 
 class PerfRegTestRunCli:
@@ -147,8 +175,9 @@ class PerfRegTestRunCli:
     def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Runs performance regression tests based on a series of commits')
-        parser.add_argument("path", nargs=1, help="The path of the project to build")
-        parser.add_argument("commits", nargs="+", help="The commits to build")
+        parser.add_argument("paths", nargs=1, help="The paths of the directories to build")
+        parser.add_argument("commits", nargs="+", help="The commits to build. When there are multiple paths, "
+                                                       "a commit for each path can passed using a:b:... ")
         parser.add_argument('-f', '--file', nargs=1, help='The tests file', default=[default_tests_path])
         parser.add_argument("-r", "--runs", nargs=1, help="The number of runs per commit",
                             default=[3], type=int)
@@ -158,11 +187,22 @@ class PerfRegTestRunCli:
         parser.add_argument("-d", "--debug", help="Print debug info", action='store_true')
 
         args = parser.parse_args(argv)
-        commits = args.commits
-        if args.randomize:
-            random.shuffle(commits)
         runs = args.runs[0]
-        project_path = validate_dir(args.path[0])
+        build_paths = args.paths[0].split(':')
+        for build_path in build_paths:
+            validate_dir(build_path)
+
+        commit_tuples = []
+        for t in args.commits:
+            tuple = t.split(":")
+            if len(tuple) != len(build_paths):
+                exit_with_error(
+                    f"The number of commits in {t} doesn't match the number of build paths {':'.join(build_paths)}")
+            commit_tuples.append(tuple)
+
+        if args.randomize:
+            random.shuffle(commit_tuples)
+
         tests = load_yaml_file(args.file[0])
         filtered_tests = []
         if args.test:
@@ -173,7 +213,7 @@ class PerfRegTestRunCli:
         else:
             filtered_tests = tests
 
-        run_all(commits, runs, project_path, filtered_tests, args.debug)
+        run_all(commit_tuples, runs, build_paths, filtered_tests, args.debug)
 
 
 class PerfRegtestCli:

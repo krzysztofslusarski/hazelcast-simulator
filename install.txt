@@ -6,10 +6,11 @@ To install simulator, run
 
 The following products need to be installed:
 
-- Terraform
-- Ansible
+- terraform
+- ansible
 - Python 3.8 or newer
-- Gnuplot
+- python3-pip
+- gnuplot
 
 THe following python libraries are needed:
 

@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.simulator.lettucecluster5;
+package com.hazelcast.simulator.lettuce6;
 
 import com.hazelcast.simulator.test.TestContext;
 import com.hazelcast.simulator.test.annotations.InjectTestContext;
 import com.hazelcast.simulator.test.annotations.InjectDriver;
-import io.lettuce.core.cluster.RedisClusterClient;
+import io.lettuce.core.RedisClient;
 import org.apache.log4j.Logger;
 
-public abstract class LettuceTest {
+public abstract class LettuceTest   {
 
     public String name = getClass().getSimpleName();
 
     protected final Logger logger = Logger.getLogger(getClass());
 
     @InjectDriver
-    protected RedisClusterClient redisClient;
+    protected RedisClient redisClient;
 
     @InjectTestContext
     protected TestContext testContext;
