@@ -245,7 +245,7 @@ class PerftestCreateCli:
         parser.add_argument("name",
                             help="The name of the performance test.", nargs='?')
         parser.add_argument("--template",
-                            help="The name of the performance test template.", default="hazelcast4")
+                            help="The name of the performance test template.", default="hazelcast5")
         parser.add_argument("--id",
                             help="An extra id to make resources unique. By default the username is used.")
         parser.add_argument("--list", help="List available performance test templates", action='store_true')

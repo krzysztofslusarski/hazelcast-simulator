@@ -20,7 +20,11 @@ import com.hazelcast.simulator.test.BaseThreadState;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;
 import com.hazelcast.simulator.test.annotations.TimeStep;
+import io.lettuce.core.FlushMode;
+import io.lettuce.core.ReadFrom;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands;
 import io.lettuce.core.cluster.api.sync.RedisAdvancedClusterCommands;
 
 import java.util.Random;
@@ -34,12 +38,16 @@ public class StringStringSyncTest extends LettuceTest {
     public int valueCount = 10000;
     public int minValueLength = 10;
     public int maxValueLength = 10;
+    public boolean deleteAllData = true;
+    // See io.lettuce.core.ReadFrom for all the options
+    public String readFrom = "ANY";
 
     private String[] values;
 
     @Setup
     public void setup() {
         values = generateAsciiStrings(valueCount, minValueLength, maxValueLength);
+
     }
 
     // loading the data is very inefficient. Needs some work in the future
@@ -47,16 +55,19 @@ public class StringStringSyncTest extends LettuceTest {
     public void loadInitialData() {
         Random random = new Random();
         StatefulRedisClusterConnection<String, String> connection = redisClient.connect();
-        RedisAdvancedClusterCommands sync = connection.sync();
-        // get rid of all data.
-        sync.flushall();
+        connection.setReadFrom(ReadFrom.valueOf(readFrom));
+        RedisAdvancedClusterAsyncCommands<String, String> async = connection.async();
+
+        if (deleteAllData) {
+            async.flushall(FlushMode.SYNC);
+        }
 
         for (int k = 0; k < keyDomain; k++) {
             int r = random.nextInt(valueCount);
-            sync.set(Long.toString(k), values[r]);
+            async.set(Long.toString(k), values[r]);
         }
 
-        //connection.async().set()
+        async.flushCommands();
     }
 
     @TimeStep(prob = -1)
@@ -74,6 +85,7 @@ public class StringStringSyncTest extends LettuceTest {
 
         ThreadState() {
             StatefulRedisClusterConnection<String, String> connection = redisClient.connect();
+            connection.setReadFrom(ReadFrom.valueOf(readFrom));
             sync = connection.sync();
         }
 

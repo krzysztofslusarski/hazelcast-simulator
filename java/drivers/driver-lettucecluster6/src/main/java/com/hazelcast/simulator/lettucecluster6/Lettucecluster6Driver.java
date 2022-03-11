@@ -23,15 +23,9 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.codec.StringCodec;
-import io.lettuce.core.codec.Utf8StringCodec;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
-import io.lettuce.core.masterslave.MasterSlave;
-import io.lettuce.core.masterslave.StatefulRedisMasterSlaveConnection;
-import io.lettuce.core.resource.DefaultClientResources;
-import io.lettuce.core.resource.DirContextDnsResolver;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -97,33 +91,12 @@ public class Lettucecluster6Driver extends Driver<RedisClusterClient> {
         if ("javaclient".equals(workerType)) {
             String[] uris = get("URI").split(",");
 
-            RedisClient redisClient = RedisClient.create();
-
             List<RedisURI> nodes = new LinkedList<>();
             for (String uri : uris) {
                 nodes.add(RedisURI.create(uri));
             }
 
-            StatefulRedisMasterReplicaConnection connection = MasterReplica.connect(redisClient, StringCodec.UTF8,nodes);
-            connection.setReadFrom(ReadFrom.MASTER_PREFERRED);
-
-            System.out.println("Connected to Redis");
-
-
-//            DefaultClientResources clientResources = DefaultClientResources.builder() //
-//                    .dnsResolver(new DirContextDnsResolver()) // Does not cache DNS lookups
-//                    .build();
-
-
-//            client = RedisClient.create();
-//
-//            StatefulRedisMasterReplicaConnection<String, String> connection = MasterReplica
-//                    .connect(client, new Utf8StringCodec(), nodes);
-//            connection.setReadFrom(ReadFrom.MASTER_PREFERRED);
-
             client = RedisClusterClient.create(nodes);
-
-            // client = RedisClient.create(clientResources, get("URI"));
         }
     }
 

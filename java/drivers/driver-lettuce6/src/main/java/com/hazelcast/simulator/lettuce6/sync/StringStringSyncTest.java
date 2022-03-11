@@ -20,7 +20,9 @@ import com.hazelcast.simulator.test.BaseThreadState;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;
 import com.hazelcast.simulator.test.annotations.TimeStep;
+import io.lettuce.core.FlushMode;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 
 import java.util.Random;
@@ -34,6 +36,7 @@ public class StringStringSyncTest extends LettuceTest {
     public int valueCount = 10000;
     public int minValueLength = 10;
     public int maxValueLength = 10;
+    public boolean deleteAllData = true;
 
     private String[] values;
 
@@ -47,11 +50,17 @@ public class StringStringSyncTest extends LettuceTest {
     public void loadInitialData() {
         Random random = new Random();
         StatefulRedisConnection<String, String> connection = redisClient.connect();
-        RedisCommands sync = connection.sync();
+        RedisAsyncCommands async = connection.async();
+        if (deleteAllData) {
+            async.flushall(FlushMode.SYNC);
+        }
+
         for (int k = 0; k < keyDomain; k++) {
             int r = random.nextInt(valueCount);
-            sync.set(Long.toString(k), values[r]);
+            async.set(Long.toString(k), values[r]);
         }
+
+       async.flushCommands();
     }
 
     @TimeStep(prob = -1)
