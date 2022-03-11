@@ -19,7 +19,8 @@ redis:
     node_type: cache.m4.large
     parameter_group_name: default.redis6.x.cluster.on
     cluster_id: cluster-example
-    port: 6379
+     # we don't use 6379 to make it less likely to scanned
+    port: 7000
     replicas_per_node_group: 1
     num_node_groups: 2 
     description: <id> Redis Cluster
@@ -27,7 +28,6 @@ redis:
     automatic_failover_enabled: true
     transit_encryption_enabled: false
     auth_token: null
-    #auth_token: JpJYzrEfL4yHBt3J
  
 loadgenerators:
     count: 2
