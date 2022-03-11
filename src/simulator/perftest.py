@@ -97,7 +97,6 @@ class PerfTest:
             args = f"{args} --loadGeneratorHosts {loadgenerator_hosts}"
 
         if members is not None:
-            print(f"members: ---------------------------")
             args = f"{args} --members {members}"
 
         if member_args:
