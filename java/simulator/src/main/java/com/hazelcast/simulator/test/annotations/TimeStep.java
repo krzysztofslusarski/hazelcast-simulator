@@ -91,7 +91,7 @@ import java.lang.annotation.Target;
  * The timestep based tests rely on code generation for the actual code to call the timestep methods. This prevents the need
  * for reflection and and the motto is that you should not pay for a feature if it isn't used. For example where logging is not
  * configured, no logging code is generated. If there is only a single timestep method, then there is no randomization. This way
- * we can reduce the overhead by the benchmark framework to the bare minimum. The generated code of the TimeStepRunner can be
+ * we can reduce the overhead by the benchmark framework to the bare minimum. The generated code of the TimeStepLoop can be
  * found in the worker directory.
  *
  * <h1>Execution groups</h1>

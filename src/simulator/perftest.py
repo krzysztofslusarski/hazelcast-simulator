@@ -9,16 +9,14 @@ from datetime import datetime
 import os
 from os import path
 
-import yaml
 import csv
 
 from load_hosts import load_hosts
 from simulator.hosts import public_ip, ssh_user, ssh_options
 from simulator.ssh import Ssh, new_key
 from simulator.util import read, write, shell, run_parallel, exit_with_error, simulator_home, shell_logged, remove, \
-    load_yaml_file, parse_tags
+    load_yaml_file, parse_tags, write_yaml
 from simulator.log import info, warn, log_header
-
 
 default_tests_path = 'tests.yaml'
 inventory_path = 'inventory.yaml'
@@ -68,10 +66,10 @@ class PerfTest:
 
         args = ""
 
-        if worker_vm_startup_delay_ms:
+        if worker_vm_startup_delay_ms is not None:
             args = f"{args} --workerVmStartupDelayMs {worker_vm_startup_delay_ms}"
 
-        if dedicated_member_machines:
+        if dedicated_member_machines is not None:
             args = f"{args} --dedicatedMemberMachines {dedicated_member_machines}"
 
         if parallel:
@@ -86,7 +84,7 @@ class PerfTest:
         if run_path:
             args = f"{args} --runPath {run_path}"
 
-        if duration:
+        if duration is not None:
             args = f"{args} --duration {duration}"
 
         if performance_monitor_interval_seconds:
@@ -98,13 +96,13 @@ class PerfTest:
         if loadgenerator_hosts:
             args = f"{args} --loadGeneratorHosts {loadgenerator_hosts}"
 
-        if members:
+        if members is not None:
             args = f"{args} --members {members}"
 
         if member_args:
             args = f"""{args} --memberArgs "{member_args}" """
 
-        if clients:
+        if clients is not None:
             args = f"{args} --clients {clients}"
 
         if client_args:
@@ -116,7 +114,7 @@ class PerfTest:
         if driver:
             args = f"{args} --driver {driver}"
 
-        if version:
+        if version is not None:
             args = f"""{args} --version "{version}"  """
 
         if fail_fast:
@@ -142,8 +140,13 @@ class PerfTest:
                 repetitions = 1
 
             for i in range(0, repetitions):
-                run_path = self.run_test(test)
-                self.collect(run_path, tags)
+                exitcode, run_path = self.run_test(test)
+
+                if exitcode == 0:
+                    self.collect(run_path,
+                                 tags,
+                                 warmup_seconds=test.get('warmup_seconds'),
+                                 cooldown_seconds=test.get('cooldown_seconds'))
         return
 
     def run_test(self, test, run_path=None):
@@ -152,7 +155,7 @@ class PerfTest:
             name = test['name']
             run_path = f"runs/{name}/{dt}"
 
-        self.exec(
+        exitcode = self.exec(
             test['test'],
             run_path=run_path,
             duration=test.get('duration'),
@@ -162,7 +165,7 @@ class PerfTest:
             license_key=test.get('license_key'),
             client_args=test.get('client_args'),
             member_args=test.get('member_args'),
-            members=test['members'],
+            members=test.get('members'),
             clients=test.get('clients'),
             driver=test.get('driver'),
             version=test.get('version'),
@@ -170,7 +173,7 @@ class PerfTest:
             verify_enabled=test.get('verify_enabled'),
             client_type=test.get('client_type'))
 
-        return run_path
+        return exitcode, run_path
 
     def clean(self):
         exitcode = self.__shell(f"{simulator_home}/bin/hidden/coordinator --clean")
@@ -186,11 +189,17 @@ class PerfTest:
         else:
             return shell(cmd, use_print=True)
 
-    def collect(self, dir, tags, warmup=0, cooldown=0):
+    def collect(self, dir, tags, warmup_seconds=None, cooldown_seconds=None):
         report_dir = f"{dir}/report"
 
+        if not warmup_seconds:
+            warmup_seconds = 0
+
+        if not cooldown_seconds:
+            cooldown_seconds = 0
+
         if not os.path.exists(report_dir):
-            self.__shell(f"perftest report  -w {warmup} -c {cooldown} -o {report_dir} {dir}")
+            self.__shell(f"perftest report  -w {warmup_seconds} -c {cooldown_seconds} -o {report_dir} {dir}")
 
         csv_path = f"{report_dir}/report.csv"
         if not os.path.exists(csv_path):
@@ -225,8 +234,7 @@ class PerfTest:
                     'throughput': row[14]}
                 results[row[1]] = {'tags': tags, 'measurements': measurements}
 
-        with open(f"{dir}/results.yaml", 'w') as results_yml:
-            yaml.dump(results, results_yml)
+        write_yaml(f"{dir}/results.yaml", results)
 
 
 class PerftestCreateCli:
@@ -236,8 +244,8 @@ class PerftestCreateCli:
                                          description="Creates a new performance test based on a template")
         parser.add_argument("name",
                             help="The name of the performance test.", nargs='?')
-        parser.add_argument("--template",
-                            help="The name of the performance test template.", default="hazelcast4")
+        parser.add_argument("-t", "--template",
+                            help="The name of the performance test template.", default="hazelcast5-ec2")
         parser.add_argument("--id",
                             help="An extra id to make resources unique. By default the username is used.")
         parser.add_argument("--list", help="List available performance test templates", action='store_true')
@@ -364,7 +372,7 @@ class PerftestRunCli:
 
         args = parser.parse_args(argv)
         tags = parse_tags(args.tag)
-        #run_path = args.runPath
+        # run_path = args.runPath
 
         tests = load_yaml_file(args.file)
         perftest = PerfTest()
@@ -519,14 +527,10 @@ class PerftestExecCli:
             client_type=args.clientType,
             skip_download=args.skipDownload)
 
-        warmup = test.get("warmup")
-        if not warmup:
-            warmup = 0
-        cooldown = test.get("cooldown")
-        if not cooldown:
-            cooldown = 0
-
-        perftest.collect(run_path, tags, warmup=warmup, cooldown=cooldown)
+        perftest.collect(run_path,
+                         tags,
+                         warmup_seconds=test.get("warmup_seconds"),
+                         cooldown_seconds=test.get("cooldown_seconds"))
 
 
 class PerftestKillJavaCli:
@@ -552,15 +556,16 @@ class PerftestCollectCli:
         parser.add_argument('-t', '--tag', metavar="KEY=VALUE", nargs=1, action='append')
         parser.add_argument('-w', '--warmup', nargs=1, default=[0], type=int,
                             help='The warmup period in seconds. The warmup removes datapoints from the start.')
+        parser.add_argument('-c', '--cooldown', nargs=1, default=[0], type=int,
+                            help='The cooldown period in seconds. The cooldown removes datapoints from the end.')
 
         args = parser.parse_args(argv)
 
         tags = parse_tags(args.tag)
 
         log_header("perftest collect")
-        warmup = args.warmup
         perftest = PerfTest()
-        perftest.collect(args.dir, tags, warmup=warmup)
+        perftest.collect(args.dir, tags, warmup_seconds=args.warmup, cooldown_seconds=args.cooldown)
 
         log_header("perftest collect: done")
 

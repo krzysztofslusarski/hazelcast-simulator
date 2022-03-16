@@ -27,6 +27,11 @@ def write(file, text):
         return f.write(text)
 
 
+def write_yaml(file, content):
+    with open(file, 'w') as f:
+        yaml.dump(content, f)
+
+
 def now_seconds():
     return round(time.time())
 
@@ -143,7 +148,7 @@ def shell(cmd, shell=True, use_print=False):
             log(data, log_level)
 
 
-def parse_tag(s):
+def __parse_tag(s):
     items = s.split('=')
     key = items[0].strip()
     value = None
@@ -158,6 +163,6 @@ def parse_tags(items):
     if items:
         flat_list = [item for sublist in items for item in sublist]
         for item in flat_list:
-            key, value = parse_tag(item)
+            key, value = __parse_tag(item)
             d[key] = value
     return d

@@ -36,12 +36,9 @@ public class TestContainer_TimeStep_OrderTest extends TestContainer_AbstractTest
         final TestContainer container = new TestContainer(testContext, testInstance, testCase);
         container.invoke(SETUP);
 
-        Future f = spawn(new Callable() {
-            @Override
-            public Object call() throws Exception {
-                container.invoke(RUN);
-                return null;
-            }
+        Future f = spawn((Callable) () -> {
+            container.invoke(RUN);
+            return null;
         });
 
         assertCompletesEventually(f);

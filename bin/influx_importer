@@ -1,4 +1,0 @@
-#!/bin/bash
-
-BINPATH=`dirname $0`
-python3 -u "$BINPATH/../src/influx_importer_cli.py" $@

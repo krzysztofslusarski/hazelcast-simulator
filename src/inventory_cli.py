@@ -97,7 +97,6 @@ Bellsoft:
 """
 
 
-
 class InventoryInstallCli:
 
     def __init__(self, argv):
@@ -202,6 +201,7 @@ class InventoryInstallCli:
 
 
 class InventoryImportCli:
+
     def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Imports the inventory from a terraform installation.')
@@ -224,6 +224,7 @@ class InventoryImportCli:
 
 
 class InventoryApplyCli:
+
     def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Creates the inventory')
@@ -253,21 +254,17 @@ class InventoryApplyCli:
 
 
 class InventoryDestroyCli:
+
     def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Destroys the inventory')
-        parser.add_argument("-f", "--force",
-                            help="Forces the destruction of the inventory (even when inventory.yaml doesn't exist)",
-                            action='store_true')
         args = parser.parse_args(argv)
 
         log_header("Inventory destroy")
 
-        force = args.force
-
-        if not force and not path.exists("inventory.yaml"):
-            info("Ignoring destroy because inventory.yaml does not exit.")
-            return
+        #if not force and not path.exists("inventory.yaml"):
+        #    info("Ignoring destroy because inventory.yaml does not exit.")
+        #    return
 
         inventory_plan = load_yaml_file(inventory_plan_path)
         provisioner = inventory_plan['provisioner']
@@ -276,7 +273,7 @@ class InventoryDestroyCli:
             info(f"Ignoring destroy on static environment")
             return
         elif provisioner == "terraform":
-            terraform_destroy(inventory_plan, force)
+            terraform_destroy(inventory_plan, force=True)
         else:
             exit_with_error(f"Unrecognized provisioner [{provisioner}]")
 
@@ -284,6 +281,7 @@ class InventoryDestroyCli:
 
 
 class InventoryShellCli:
+
     def __init__(self, argv):
         parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                          description='Executes a shell command on the inventory', )

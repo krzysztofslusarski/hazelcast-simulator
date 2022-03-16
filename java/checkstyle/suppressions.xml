@@ -63,12 +63,12 @@
     <!-- Lettuce Tests -->
     <suppress checks="MagicNumber|VisibilityModifier" files="/com/hazelcast/simulator/lettuce5/"/>
     <suppress checks="JUnitTestCase|MethodName|TypeName|ExplicitInitialization"
-              files="/com/hazelcast/simulator/lettuce5/.*Test\.java$"/>
+              files="/com/hazelcast/simulator/lettuce6/.*Test\.java$"/>
 
     <!-- Lettuce Cluster Tests -->
     <suppress checks="MagicNumber|VisibilityModifier" files="/com/hazelcast/simulator/lettucecluster5/"/>
     <suppress checks="JUnitTestCase|MethodName|TypeName|ExplicitInitialization"
-              files="/com/hazelcast/simulator/lettucecluster5/.*Test\.java$"/>
+              files="/com/hazelcast/simulator/lettucecluster6/.*Test\.java$"/>
 
     <!-- Jedis Tests -->
     <suppress checks="MagicNumber|VisibilityModifier" files="/com/hazelcast/simulator/jedis3/"/>

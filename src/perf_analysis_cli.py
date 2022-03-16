@@ -8,10 +8,12 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
-from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive
+from signal_processing_algorithms.energy_statistics.energy_statistics import e_divisive, get_energy_statistics, \
+    get_energy_statistics_and_probabilities
 
 import commit_sorter
-from simulator.util import load_yaml_file, validate_dir, mkdir, validate_git_dir, write
+from simulator.log import info, log_header
+from simulator.util import load_yaml_file, validate_dir, mkdir, validate_git_dir, write, write_yaml, exit_with_error
 
 
 class TimeSeries:
@@ -47,15 +49,8 @@ class TimeSeries:
         return len(self.x)
 
 
-def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900):
-    if cps and aps:
-        plt.title(f"Changepoints and anomalies: {ts.name}")
-    elif cps:
-        plt.title(f"Changepoints: {ts.name}")
-    elif aps:
-        plt.title(f"Anomalies: {ts.name}")
-    else:
-        plt.title(f"{ts.name}")
+def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900, title="Changepoint and anomalies"):
+    plt.title(f"{title}: {ts.name}")
 
     my_dpi = 96
     plt.figure(figsize=(width / my_dpi, height / my_dpi), dpi=my_dpi)
@@ -71,16 +66,16 @@ def plot(ts, filename, cps=None, aps=None, ymin=0, width=1600, height=900):
             y = ts.y[p.index]
             commit = ts.x[p.index]
             if p.direction == Change.POSITIVE:
-                plt.plot(x, y, 'o', markersize=6, color="green", label=f"pa: {commit}")
+                plt.plot(x, y, 'o', markersize=12, color="green", label=f"pos. anom.: {commit}")
             else:
-                plt.plot(x, y, 'o', markersize=6, color="red", label=f"na: {commit}")
+                plt.plot(x, y, 'o', markersize=12, color="blue", label=f"neg. anom.: {commit}")
 
     if cps:
         for p in cps:
             x = ts.fake_x[p.index]
             y = ts.y[p.index]
             commit = ts.x[p.index]
-            plt.plot(x, y, 'o', markersize=10, color="blue", label=f"cp: {commit}")
+            plt.plot(x, y, 'o', markersize=6, color="red", label=f"change point: {commit}")
 
     plt.legend()
     plt.ylim(ymin=ymin)
@@ -171,7 +166,7 @@ def pick_best_value(values, metric):
                 best = (commit, value)
     else:
         for (commit, value) in values:
-             if not best or value > best[1]:
+            if not best or value > best[1]:
                 best = (commit, value)
 
     return best
@@ -191,7 +186,7 @@ def ordered_commits(dir, git_dir):
 
 
 def load_ts_per_metric(dir, git_dir):
-    print("Loading data")
+    info("Loading data")
     y_map = {}
     x_map = {}
     for commit in ordered_commits(dir, git_dir):
@@ -218,8 +213,16 @@ def load_ts_per_metric(dir, git_dir):
     return result
 
 
-def changepoint_detection(ts):
-    indices = e_divisive(ts.y, permutations=10000)
+def changepoint_detection(ts, permutations=100, pvalue=0.05):
+    indices = e_divisive(ts.y, permutations=permutations, pvalue=pvalue)
+
+
+    if indices:
+        i = indices[0]
+        x = ts.y[0:i]
+        y = ts.y[i:]
+        print(get_energy_statistics_and_probabilities(x, y))
+
     result = []
     for i in indices:
         result.append(ChangePoint(i, None))
@@ -239,8 +242,17 @@ class PerfRegressionAnalysisCli:
         parser.add_argument("-l", "--latest", nargs=1, help="Take the n latest items", type=int)
         parser.add_argument("--width", nargs=1, help="The width of the images", type=int, default=1600)
         parser.add_argument("--height", nargs=1, help="The height of the images", type=int, default=900)
+        parser.add_argument("--permutations", nargs=1,
+                            help="The number of permutations for the change point detection", type=int, default=100)
+        parser.add_argument("--pvalue", nargs=1,
+                            help="The pvalue for the change point detection", type=float, default=0.05)
+        parser.add_argument("--n_std_treshhold", nargs=1,
+                            help="The number of standard deviations away from the mean to be considered an anomaly",
+                            type=float, default=4)
         parser.add_argument("-o", "--output", help="The directory to write the output", nargs=1,
                             default=f"{os.getcwd()}/analysis")
+
+        log_header("perfregtest analysis")
 
         args = parser.parse_args(argv)
         self.git_dir = validate_git_dir(args.git_dir[0])
@@ -251,8 +263,17 @@ class PerfRegressionAnalysisCli:
         self.output = mkdir(args.output)
         self.zero = args.zero
         self.ts_per_metric = load_ts_per_metric(self.dir, self.git_dir)
+        self.permutations = args.permutations
+        if self.permutations < 1:
+            exit_with_error("permutations can't be smaller than 1")
+        self.pvalue = args.pvalue
+        if self.pvalue < 0:
+            exit_with_error("pvalue can't be smaller than 0")
+        if self.pvalue > 1:
+            exit_with_error("pvalue can't be larger than 1")
         self.anomalies_per_metric = {}
         self.changepoints_per_metric = {}
+        self.n_std_treshhold = args.n_std_treshhold
 
         self.trim()
         self.changepoint_detection()
@@ -260,11 +281,11 @@ class PerfRegressionAnalysisCli:
         self.make_plots()
         self.make_report()
 
-        print(f"Analysis results can be found in [{self.output}].")
+        info(f"Analysis results can be found in [{self.output}].")
 
     def make_report(self):
-        print("Making report")
-        problems = {}
+        info("Making report")
+        all_problems = {}
         commits = set()
         for metric, ts in self.ts_per_metric.items():
             cps = self.changepoints_per_metric.get(metric)
@@ -273,39 +294,42 @@ class PerfRegressionAnalysisCli:
                 commit = ts.x[cp.index]
                 commits.add(commit)
 
-                problems_for_commit = problems.get(commit)
-                if not problems_for_commit:
-                    problems_for_commit = []
-                    problems[commit] = problems_for_commit
+                commit_problems = all_problems.get(commit)
+                if not commit_problems:
+                    commit_problems = []
+                    all_problems[commit] = commit_problems
 
-                problems_for_commit.append(f"{metric} change-point")
+                commit_problems.append(f"{metric} change-point")
             for ap in aps:
                 commit = ts.x[ap.index]
                 commits.add(commit)
 
-                problems_for_commit = problems.get(commit)
-                if not problems_for_commit:
-                    problems_for_commit = []
-                    problems[commit] = problems_for_commit
+                commit_problems = all_problems.get(commit)
+                if not commit_problems:
+                    commit_problems = []
+                    all_problems[commit] = commit_problems
 
                 x = "{:.2f}".format(ap.n)
                 msg = f"{x} std away from the mean."
-                problems_for_commit.append(f"{metric} anomaly : {msg}")
+                commit_problems.append(f"{metric} anomaly : {msg}")
         commits = commit_sorter.order(commits, self.git_dir)
 
+        yaml_content = {}
         text = ""
         for commit in commits:
-            problems_for_commit = problems.get(commit)
-            if not problems_for_commit:
+            commit_problems = all_problems.get(commit)
+            if not commit_problems:
                 continue
 
             text += f"commit {commit}\n"
-            for problem in problems_for_commit:
+            for problem in commit_problems:
                 text += f"   {problem}\n"
+            yaml_content[commit] = commit_problems
         write(f"{self.output}/analysis.txt", text)
+        write_yaml(f"{self.output}/analysis.yaml", yaml_content)
 
     def make_plots(self):
-        print("Making plots")
+        info("Making plots")
         for metric, ts in self.ts_per_metric.items():
             cps = self.changepoints_per_metric.get(metric)
             aps = self.anomalies_per_metric.get(metric)
@@ -314,19 +338,19 @@ class PerfRegressionAnalysisCli:
             plot(ts, filename, cps=cps, aps=aps, ymin=ymin, width=self.width, height=self.height)
 
     def anomaly_detection(self):
-        print("Anomaly detection")
+        info("Anomaly detection")
         for metric, ts in self.ts_per_metric.items():
-            aps = anomaly_detection(ts, min_history_length=10, max_n=4)
+            aps = anomaly_detection(ts, min_history_length=10, max_n=self.n_std_treshhold)
             self.anomalies_per_metric[metric] = aps
 
     def changepoint_detection(self):
-        print("Changepoint detection")
+        info("Changepoint detection")
         for metric, ts in self.ts_per_metric.items():
-            cps = changepoint_detection(ts)
+            cps = changepoint_detection(ts, self.permutations, self.pvalue)
             self.changepoints_per_metric[metric] = cps
 
     def trim(self):
-        print("Trimming data")
+        info("Trimming data")
         if self.latest:
             for metric, ts in self.ts_per_metric.items():
                 self.ts_per_metric[metric] = ts.newest(self.latest)

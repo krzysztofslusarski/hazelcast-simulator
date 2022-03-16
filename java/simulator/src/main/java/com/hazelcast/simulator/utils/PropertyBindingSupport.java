@@ -307,6 +307,7 @@ public final class PropertyBindingSupport {
     }
 
     private static void setPrimitiveBooleanField(Object object, String value, Field field) throws IllegalAccessException {
+        value = value.toLowerCase();
         if ("true".equals(value)) {
             field.set(object, true);
         } else if ("false".equals(value)) {
