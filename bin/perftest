@@ -6,3 +6,6 @@ fi
 
 BINPATH=`dirname $0`
 python3 -u "$BINPATH/../src/perftest_cli.py" $@
+
+
+

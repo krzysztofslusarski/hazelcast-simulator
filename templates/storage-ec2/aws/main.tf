@@ -143,11 +143,17 @@ resource "aws_instance" "nodes" {
         host        = self.public_ip
     }
 
+    provisioner "file" {
+        source      = "auto_mount.py"
+        destination = "/tmp/auto_mount.py"
+    }
+
     provisioner "remote-exec" {
         inline = [
            "echo \"${local.private_key}\" > ~/.ssh/id_rsa",
            "echo \"${local.public_key}\" > ~/.ssh/id_rsa.pub",
-           "chmod 600 ~/.ssh/id_rsa*"
+           "chmod 600 ~/.ssh/id_rsa*",
+           "python3 /tmp/auto_mount.py"
         ]
     }
 }
