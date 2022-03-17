@@ -3,13 +3,43 @@
   tasks:
   - name: Installs perf
     shell: |
-      sudo yum -y install perf
-      sudo yum -y install git
-      sudo yum -y install cmake
-      sudo yum -y install make
-      sudo yum -y install gcc-c++
+      set -e
+
+      if hash yum 2>/dev/null; then
+          sudo yum -y update
+          sudo yum -y install perf
+          sudo yum -y install git
+          sudo yum -y install cmake
+          sudo yum -y install make
+          sudo yum -y install gcc-c++
+      elif hash apt-get 2>/dev/null; then
+          sudo apt-get -y update
+          sudo apt-get -y install git
+          sudo apt-get -y install cmake
+          sudo apt-get -y install make
+          sudo apt-get -y install build-essential
+          sudo apt-get -y install linux-tools-common
+          sudo apt-get -y install linux-tools-generic
+          sudo apt-get -y install linux-tools-`uname -r`
+      else
+          echo "Could not find apt-get/yum"
+          exit 1
+      fi
+
+      rm -fr FlameGraph
+      git clone https://github.com/brendangregg/FlameGraph
+
+      #rm -fr perf-map-agent
+      #git clone --depth=1 https://github.com/jvm-profiling-tools/perf-map-agent
+      #cd perf-map-agent
+      #cmake .
+      #make
+      #cd ..
+      #cp perf-map-agent/out/attach-main.jar .
+      #cp perf-map-agent/out/libperfmap.so .
     register: result
   - debug: msg="{{result.stdout}}"
 
 
 
+# apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`

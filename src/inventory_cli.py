@@ -5,7 +5,7 @@ import argparse
 from os import path
 
 from simulator.inventory_terraform import terraform_import, terraform_destroy, terraform_apply
-from simulator.util import load_yaml_file, exit_with_error, simulator_home, shell
+from simulator.util import load_yaml_file, exit_with_error, simulator_home, shell, now_seconds
 from simulator.log import info, log_header
 from simulator.ssh import new_key
 
@@ -239,6 +239,7 @@ class InventoryApplyCli:
         provisioner = inventory_plan['provisioner']
         force = args.force
 
+        start = now_seconds()
         if not path.exists("key.pub"):
             new_key()
 
@@ -251,6 +252,8 @@ class InventoryApplyCli:
             exit_with_error(f"Unrecognized provisioner [{provisioner}]")
 
         log_header("Inventory apply: Done")
+        duration = now_seconds() - start
+        info(f"Duration: {duration}s")
 
 
 class InventoryDestroyCli:
@@ -268,6 +271,7 @@ class InventoryDestroyCli:
 
         inventory_plan = load_yaml_file(inventory_plan_path)
         provisioner = inventory_plan['provisioner']
+        start = now_seconds()
 
         if provisioner == "static":
             info(f"Ignoring destroy on static environment")
@@ -278,7 +282,8 @@ class InventoryDestroyCli:
             exit_with_error(f"Unrecognized provisioner [{provisioner}]")
 
         log_header("Inventory destroy: Done")
-
+        duration = now_seconds() - start
+        info(f"Duration: {duration}s")
 
 class InventoryShellCli:
 
