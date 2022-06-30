@@ -17,12 +17,28 @@ package com.hazelcast.simulator.hz;
 
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableAccountKey;
+import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableAccountValue;
+import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableTransKey;
+import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableTransValue;
 
 public class IdentifiedDataPortableFactory implements PortableFactory {
     public static final int FACTORY_ID = 1;
 
     @Override
     public Portable create(int i) {
-        return new IdentifiedDataWithLongPortablePojo();
+        switch (i) {
+            case 1:
+                return new IdentifiedDataWithLongPortablePojo();
+            case 2:
+                return new Client2PortableAccountValue();
+            case 3:
+                return new Client2PortableAccountKey();
+            case 4:
+                return new Client2PortableTransValue();
+            case 5:
+                return new Client2PortableTransKey();
+        }
+        return null;
     }
 }

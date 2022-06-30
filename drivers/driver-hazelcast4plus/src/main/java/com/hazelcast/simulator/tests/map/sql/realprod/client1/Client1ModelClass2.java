@@ -1,4 +1,4 @@
-package com.hazelcast.simulator.tests.map.sql.realprod;
+package com.hazelcast.simulator.tests.map.sql.realprod.client1;
 
 public class Client1ModelClass2 extends Client1ModelClass1 {
     private String string1;

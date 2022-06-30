@@ -1,4 +1,4 @@
-package com.hazelcast.simulator.tests.map.sql.realprod;
+package com.hazelcast.simulator.tests.map.sql.realprod.client1;
 
 import java.io.Serializable;
 import java.util.Date;
