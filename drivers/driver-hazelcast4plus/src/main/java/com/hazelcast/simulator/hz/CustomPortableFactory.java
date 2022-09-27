@@ -22,14 +22,14 @@ import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableAcc
 import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableTransKey;
 import com.hazelcast.simulator.tests.map.sql.realprod.client2.Client2PortableTransValue;
 
-public class IdentifiedDataPortableFactory implements PortableFactory {
+public class CustomPortableFactory implements PortableFactory {
     public static final int FACTORY_ID = 1;
 
     @Override
     public Portable create(int i) {
         switch (i) {
             case 1:
-                return new IdentifiedDataWithLongPortablePojo();
+                return new LongPortablePojo();
             case 2:
                 return new Client2PortableAccountValue();
             case 3:

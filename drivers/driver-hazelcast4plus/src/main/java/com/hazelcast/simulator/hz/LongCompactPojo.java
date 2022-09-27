@@ -15,18 +15,14 @@
  */
 package com.hazelcast.simulator.hz;
 
-/**
- * A sample IdentifiedDataSerializable object implementation.
- * With 20 integers in 'numbers' and a long in 'value'.
- */
-public class IdentifiedDataWithLongCompactPojo {
+public class LongCompactPojo {
     public Integer[] numbers;
     public Long value;
 
-    public IdentifiedDataWithLongCompactPojo() {
+    public LongCompactPojo() {
     }
 
-    public IdentifiedDataWithLongCompactPojo(Integer[] numbers, Long value) {
+    public LongCompactPojo(Integer[] numbers, Long value) {
         this.numbers = numbers;
         this.value = value;
     }

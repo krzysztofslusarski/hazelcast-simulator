@@ -19,13 +19,13 @@
 # - option to show real time
 
 import argparse
+import base64
 import csv
 import os
 import re
-import subprocess
 import shutil
+import subprocess
 from collections import Counter
-import base64
 
 parser = argparse.ArgumentParser(description='Creating a benchmark report from one or more benchmarks.')
 parser.add_argument('benchmarks', metavar='B', nargs='+',
@@ -791,29 +791,29 @@ class DstatAnalyzer:
 
     def __load_dstat(self, column, dstat_csv):
         result = []
-        if os.path.exists(dstat_csv):
-            with open(dstat_csv) as csvfile:
-                csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-                # we need to skip the first 7 lines
-                for x in range(0, 8):
-                    next(csvreader)
-                for row in csvreader:
-                    if column < len(row):  # protection if column doesn't exist
-                        result.append(KeyValue(row[0], row[column]))
+        # if os.path.exists(dstat_csv):
+        #     with open(dstat_csv) as csvfile:
+        #         csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        #         # we need to skip the first 7 lines
+        #         for x in range(0, 8):
+        #             next(csvreader)
+        #         for row in csvreader:
+        #             if column < len(row):  # protection if column doesn't exist
+        #                 result.append(KeyValue(row[0], row[column]))
         return result
 
     # total cpu usage isn't explicitly provided by dstat, so we just sum the user+system
     def __load_dstat_cpu_total_ts(self, dstat_csv):
         result = []
-        if os.path.exists(dstat_csv):
-            with open(dstat_csv) as csvfile:
-                csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-                # we need to skip the first 7 lines
-                for x in range(0, 8):
-                    next(csvreader)
-                for row in csvreader:
-                    if len(row) > 6:  # protection if column doesn't exist
-                        result.append(KeyValue(row[0], float(row[5]) + float(row[6])))
+        # if os.path.exists(dstat_csv):
+        #     with open(dstat_csv) as csvfile:
+        #         csvreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        #         # we need to skip the first 7 lines
+        #         for x in range(0, 8):
+        #             next(csvreader)
+        #         for row in csvreader:
+        #             if len(row) > 6:  # protection if column doesn't exist
+        #                 result.append(KeyValue(row[0], float(row[5]) + float(row[6])))
         return result
 
 

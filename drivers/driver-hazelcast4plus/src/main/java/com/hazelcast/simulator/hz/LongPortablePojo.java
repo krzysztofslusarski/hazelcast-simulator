@@ -21,18 +21,14 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * A sample IdentifiedDataSerializable object implementation.
- * With 20 integers in 'numbers' and a long in 'value'.
- */
-public class IdentifiedDataWithLongPortablePojo implements Portable {
+public class LongPortablePojo implements Portable {
     public Integer[] numbers;
     public Long value;
 
-    public IdentifiedDataWithLongPortablePojo() {
+    public LongPortablePojo() {
     }
 
-    public IdentifiedDataWithLongPortablePojo(Integer[] numbers, Long value) {
+    public LongPortablePojo(Integer[] numbers, Long value) {
         this.numbers = numbers;
         this.value = value;
     }

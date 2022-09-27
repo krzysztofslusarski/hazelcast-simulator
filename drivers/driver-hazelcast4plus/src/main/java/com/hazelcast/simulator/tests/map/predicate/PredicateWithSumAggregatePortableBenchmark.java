@@ -18,7 +18,7 @@ package com.hazelcast.simulator.tests.map.predicate;
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.map.IMap;
 import com.hazelcast.simulator.hz.HazelcastTest;
-import com.hazelcast.simulator.hz.IdentifiedDataWithLongPortablePojo;
+import com.hazelcast.simulator.hz.LongPortablePojo;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;
 import com.hazelcast.simulator.test.annotations.Teardown;
@@ -36,7 +36,7 @@ public class PredicateWithSumAggregatePortableBenchmark extends HazelcastTest {
     private long sum;
 
     //16 byte + N*(20*N
-    private IMap<Integer, IdentifiedDataWithLongPortablePojo> map;
+    private IMap<Integer, LongPortablePojo> map;
 
     @Setup
     public void setUp() {
@@ -45,7 +45,7 @@ public class PredicateWithSumAggregatePortableBenchmark extends HazelcastTest {
 
     @Prepare(global = true)
     public void prepare() {
-        Streamer<Integer, IdentifiedDataWithLongPortablePojo> streamer = StreamerFactory.getInstance(map);
+        Streamer<Integer, LongPortablePojo> streamer = StreamerFactory.getInstance(map);
         Integer[] sampleArray = new Integer[20];
         for (int i = 0; i < 20; i++) {
             sampleArray[i] = i;
@@ -53,7 +53,7 @@ public class PredicateWithSumAggregatePortableBenchmark extends HazelcastTest {
 
         for (int i = 0; i < entryCount; i++) {
             Integer key = i;
-            IdentifiedDataWithLongPortablePojo value = new IdentifiedDataWithLongPortablePojo(sampleArray, key.longValue());
+            LongPortablePojo value = new LongPortablePojo(sampleArray, key.longValue());
             sum += i;
             streamer.pushEntry(key, value);
         }

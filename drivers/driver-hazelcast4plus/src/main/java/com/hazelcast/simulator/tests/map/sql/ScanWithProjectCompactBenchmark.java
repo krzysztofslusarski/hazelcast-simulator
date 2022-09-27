@@ -17,7 +17,7 @@ package com.hazelcast.simulator.tests.map.sql;
 
 import com.hazelcast.map.IMap;
 import com.hazelcast.simulator.hz.HazelcastTest;
-import com.hazelcast.simulator.hz.IdentifiedDataWithLongCompactPojo;
+import com.hazelcast.simulator.hz.LongCompactPojo;
 import com.hazelcast.simulator.test.annotations.Prepare;
 import com.hazelcast.simulator.test.annotations.Setup;
 import com.hazelcast.simulator.test.annotations.Teardown;
@@ -37,7 +37,7 @@ public class ScanWithProjectCompactBenchmark extends HazelcastTest {
     private long sum;
 
     //16 byte + N*(20*N
-    private IMap<Integer, IdentifiedDataWithLongCompactPojo> map;
+    private IMap<Integer, LongCompactPojo> map;
 
     @Setup
     public void setUp() {
@@ -46,7 +46,7 @@ public class ScanWithProjectCompactBenchmark extends HazelcastTest {
 
     @Prepare(global = true)
     public void prepare() {
-        Streamer<Integer, IdentifiedDataWithLongCompactPojo> streamer = StreamerFactory.getInstance(map);
+        Streamer<Integer, LongCompactPojo> streamer = StreamerFactory.getInstance(map);
         Integer[] sampleArray = new Integer[20];
         for (int i = 0; i < 20; i++) {
             sampleArray[i] = i;
@@ -54,7 +54,7 @@ public class ScanWithProjectCompactBenchmark extends HazelcastTest {
 
         for (int i = 0; i < entryCount; i++) {
             Integer key = i;
-            IdentifiedDataWithLongCompactPojo value = new IdentifiedDataWithLongCompactPojo(sampleArray, key.longValue());
+            LongCompactPojo value = new LongCompactPojo(sampleArray, key.longValue());
             sum += i;
             streamer.pushEntry(key, value);
         }
