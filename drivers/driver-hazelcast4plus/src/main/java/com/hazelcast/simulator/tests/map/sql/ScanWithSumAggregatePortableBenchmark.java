@@ -66,13 +66,12 @@ public class ScanWithSumAggregatePortableBenchmark extends HazelcastTest {
         SqlService sqlService = targetInstance.getSql();
         String query = "CREATE EXTERNAL MAPPING IF NOT EXISTS " + name + " "
                 + "EXTERNAL NAME " + name
-                + " "
                 + "        TYPE IMap\n"
                 + "        OPTIONS (\n"
                 + "                'keyFormat' = 'java',\n"
                 + "                'keyJavaClass' = 'java.lang.Integer',\n"
                 + "                'valueFormat' = 'java',\n"
-                + "                'valueJavaClass' = 'com.hazelcast.simulator.hz.IdentifiedDataWithLongPortablePojo'\n"
+                + "                'valueJavaClass' = 'com.hazelcast.simulator.hz.LongPortablePojo'\n"
                 + "        )";
 
         sqlService.execute(query);
